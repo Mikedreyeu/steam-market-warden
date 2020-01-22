@@ -1,4 +1,9 @@
+import os
+
+from dotenv import load_dotenv
 from orator import DatabaseManager
+
+load_dotenv(verbose=True)
 
 databases = {
     'postgres': {
@@ -12,3 +17,5 @@ databases = {
 }
 
 db = DatabaseManager(databases)
+
+BOT_TOKEN = os.getenv("BOT_TOKEN")
