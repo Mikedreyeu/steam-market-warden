@@ -1,13 +1,62 @@
+import asyncio
+import time
+from typing import List
+
 import requests
-import urllib.parse
+from aiohttp import ClientSession
 
 from market_api.constants import SEARCH_KEYS_TO_EXTRACT, \
-    PRICE_OVERVIEW_KEYS_TO_EXTRACT
+    PRICE_OVERVIEW_KEYS_TO_EXTRACT, PRICE_OVERVIEW_URL, MARKET_SEARCH_URL
+
+
+async def fetch(session, url: str, params: dict):
+    async with session.get(url, params=params) as response:
+        return await response.json()
+
+
+async def run_async_requests(url_params_tuples: List[tuple]):
+    async with ClientSession() as session:
+        tasks = [
+            asyncio.create_task(fetch(session, url, params))
+            for url, params in url_params_tuples
+        ]
+
+        return await asyncio.gather(*tasks)
+
+
+def request_item_info_async(
+        appid: int, market_hash_name: str, currency: int = 1
+):
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+
+    price_overview_tuple = (
+        PRICE_OVERVIEW_URL,
+        {
+            'appid': appid,
+            'market_hash_name': market_hash_name,
+            'currency': currency
+        }
+    )
+    market_search_tuple = (
+        MARKET_SEARCH_URL,
+        {
+            'norender': 1,
+            'query': market_hash_name,
+            'appid': appid
+        }
+    )
+
+    reslting_dicts = loop.run_until_complete(run_async_requests([
+        price_overview_tuple, market_search_tuple
+    ]))
+
+    return reslting_dicts[0], reslting_dicts[1]
 
 
 def price_overview(appid: int, market_hash_name: str, currency: int = 1):
     response = requests.get(
-        'https://steamcommunity.com/market/priceoverview',
+        PRICE_OVERVIEW_URL,
         params={
             'appid': appid,
             'market_hash_name': market_hash_name,
@@ -23,7 +72,7 @@ def market_search(
         sort_column: str = None, sort_dir: str = None, **kwargs
 ):
     response = requests.get(
-        'https://steamcommunity.com/market/search/render',
+        MARKET_SEARCH_URL,
         params={
             'norender': 1,
             'query': query,
@@ -40,13 +89,13 @@ def market_search(
 
 def get_item_info(appid: int, market_hash_name: str, currency: int = 1):
     item_info = {}
-    price_overview_response = price_overview(appid, market_hash_name, currency)
-    price_overview_dict = price_overview_response.json()
 
-    market_search_response = market_search(market_hash_name, appid)
-    market_search_dict = market_search_response.json()
+    (price_overview_response,
+     market_search_response) = request_item_info_async(
+        appid, market_hash_name, currency
+    )
 
-    if price_overview_dict['success']:
+    if price_overview_response['success']:
         item_info.update(
             {
                 key: price_overview_response[key]
@@ -54,9 +103,9 @@ def get_item_info(appid: int, market_hash_name: str, currency: int = 1):
             }
         )
 
-    if (market_search_dict['success']
-            and market_search_dict['total_count'] == 1):
-        result = market_search_dict['results'][0]
+    if (market_search_response['success']
+            and market_search_response['total_count'] == 1):
+        result = market_search_response['results'][0]
 
         item_info.update({key: result[key] for key in SEARCH_KEYS_TO_EXTRACT})
 
@@ -64,11 +113,13 @@ def get_item_info(appid: int, market_hash_name: str, currency: int = 1):
             result['asset_description']['icon_url']
         )
 
+    return item_info
+
 
 def _build_icon_url(icon_url: str, size_argument: str = None):
     """
     :param icon_url: icon_url
-    :param size_argument: {pixels}fx{pixels}f,
+    :param size_argument: {pixels}fx{pixels}f, (200fx100f = small sized)
     :return: full url
     """
     return (
