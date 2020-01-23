@@ -28,7 +28,7 @@ def start(update, context):
 def item_info(update, context):
     args = parse_args(context.args)
 
-    if args < 2:
+    if len(args) < 2:
         raise CommandException(BRACKETS_ERROR)
 
     no_photo = NO_PHOTO_ARG in args
