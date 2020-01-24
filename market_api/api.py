@@ -1,12 +1,14 @@
 import asyncio
-import time
 from typing import List
 
 import requests
 from aiohttp import ClientSession
 
-from market_api.constants import SEARCH_KEYS_TO_EXTRACT, \
-    PRICE_OVERVIEW_KEYS_TO_EXTRACT, PRICE_OVERVIEW_URL, MARKET_SEARCH_URL
+from market_api.constants import (
+    SEARCH_KEYS_TO_EXTRACT, PRICE_OVERVIEW_KEYS_TO_EXTRACT, PRICE_OVERVIEW_URL,
+    MARKET_SEARCH_URL
+)
+from telegram_bot.exceptions.exceptions import ApiException
 
 
 async def fetch(session, url: str, params: dict):
@@ -88,12 +90,36 @@ def market_search(
 
 
 def get_item_info(appid: int, market_hash_name: str, currency: int = 1):
-    item_info = {}
+    item_info = {'exact_item': True}
 
     (price_overview_response,
      market_search_response) = request_item_info_async(
         appid, market_hash_name, currency
     )
+
+    if market_search_response['success']:
+        result = market_search_response['results'][0]
+
+        item_info.update(
+            {
+                key: result.get(key)
+                for key in SEARCH_KEYS_TO_EXTRACT
+            }
+        )
+
+        item_info['icon_url'] = _build_icon_url(
+            result['asset_description']['icon_url']
+        )
+
+        if market_hash_name not in (result['hash_name'], result['name']):
+            item_info['exact_item'] = False
+            price_overview_response = price_overview(
+                appid=appid,
+                market_hash_name=market_search_response['results'][0][
+                    'hash_name'
+                ],
+                currency=currency
+            )
 
     if price_overview_response['success']:
         item_info.update(
@@ -103,16 +129,9 @@ def get_item_info(appid: int, market_hash_name: str, currency: int = 1):
             }
         )
 
-    # and market_search_response['total_count'] == 1
-    if market_search_response['success']:
-        result = market_search_response['results'][0]
-
-        item_info.update({key: result.get(key) for key in SEARCH_KEYS_TO_EXTRACT})
-
-        item_info['icon_url'] = _build_icon_url(
-            result['asset_description']['icon_url']
-        )
-    # TODO: compare name with name in arg
+    if (not price_overview_response['success']
+            and market_search_response['total_count'] == 0):
+        raise ApiException('NOTHING_FOUND')
 
     return item_info
 
