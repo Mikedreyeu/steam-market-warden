@@ -111,7 +111,9 @@ def get_item_info(appid: int, market_hash_name: str, currency: int = 1):
             result['asset_description']['icon_url']
         )
 
-        if market_hash_name not in (result['hash_name'], result['name']):
+        if market_hash_name.lower() not in (
+                result['hash_name'].lower(), result['name'].lower()
+        ):
             item_info['exact_item'] = False
             price_overview_response = price_overview(
                 appid=appid,

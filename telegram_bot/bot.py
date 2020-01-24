@@ -1,7 +1,7 @@
 import logging
 
 from emoji import emojize
-from telegram import ParseMode
+from telegram import ParseMode, ChatAction
 from telegram.ext import Updater, CommandHandler
 
 from market_api.api import get_item_info
@@ -12,7 +12,7 @@ from telegram_bot.exceptions.error_messages import (
 )
 from telegram_bot.exceptions.exceptions import CommandException
 from telegram_bot.message_builder import format_item_info
-from telegram_bot.utils import parse_args
+from telegram_bot.utils import parse_args, send_typing_action
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -26,6 +26,7 @@ def start(update, context):
     update.message.reply_text('Hi!')
 
 
+@send_typing_action
 def item_info(update, context):
     args = parse_args(context.args)
 
@@ -38,6 +39,10 @@ def item_info(update, context):
     no_photo = NO_IMAGE_ARG in args
     if no_photo:
         args = [arg for arg in args if arg != NO_IMAGE_ARG]
+
+    context.bot.send_chat_action(
+        chat_id=update.effective_message.chat_id, action=ChatAction.TYPING
+    )
 
     item_info_dict = get_item_info(args[0], args[1])
 

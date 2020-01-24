@@ -1,3 +1,7 @@
+from functools import wraps
+
+from telegram import ChatAction
+
 from telegram_bot.exceptions.error_messages import BRACKETS_ERROR
 from telegram_bot.exceptions.exceptions import CommandException
 
@@ -16,3 +20,14 @@ def parse_args(original_args):
         raise CommandException(BRACKETS_ERROR)
 
     return arguments
+
+
+def send_typing_action(func):
+    @wraps(func)
+    def command_func(update, context, *args, **kwargs):
+        context.bot.send_chat_action(
+            chat_id=update.effective_message.chat_id, action=ChatAction.TYPING
+        )
+        return func(update, context,  *args, **kwargs)
+
+    return command_func

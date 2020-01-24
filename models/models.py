@@ -6,4 +6,4 @@ Model.set_connection_resolver(db)
 
 
 class User(Model):
-    __table__ = 'my_users'
+    __table__ = 'users'
