@@ -8,6 +8,7 @@ from market_api.constants import (
     SEARCH_KEYS_TO_EXTRACT, PRICE_OVERVIEW_KEYS_TO_EXTRACT, PRICE_OVERVIEW_URL,
     MARKET_SEARCH_URL
 )
+from market_api.utils import build_icon_url
 from telegram_bot.exceptions.exceptions import ApiException
 
 
@@ -101,13 +102,10 @@ def get_item_info(appid: int, market_hash_name: str, currency: int = 1):
         result = market_search_response['results'][0]
 
         item_info.update(
-            {
-                key: result.get(key)
-                for key in SEARCH_KEYS_TO_EXTRACT
-            }
+            {key: result.get(key) for key in SEARCH_KEYS_TO_EXTRACT}
         )
 
-        item_info['icon_url'] = _build_icon_url(
+        item_info['icon_url'] = build_icon_url(
             result['asset_description']['icon_url']
         )
 
@@ -138,13 +136,23 @@ def get_item_info(appid: int, market_hash_name: str, currency: int = 1):
     return item_info
 
 
-def _build_icon_url(icon_url: str, size_argument: str = None):
-    """
-    :param icon_url: icon_url
-    :param size_argument: {pixels}fx{pixels}f, (200fx100f = small sized)
-    :return: full url
-    """
-    return (
-        f'https://steamcommunity-a.akamaihd.net/economy/image'
-        f'/{icon_url}/{size_argument}'
-    )
+def market_search_for_command(
+        query: str = None, appid: int = None, count: int = None,
+        sort_column: str = None, sort_dir: str = None, **kwargs
+):
+    market_search_dict = {}
+
+    market_search_response = market_search(query=query)
+
+    if market_search_response['success']:
+        result = market_search_response['results'][0]
+
+        market_search_dict.update(
+            {key: result.get(key) for key in SEARCH_KEYS_TO_EXTRACT}
+        )
+
+        market_search_dict['icon_url'] = build_icon_url(
+            result['asset_description']['icon_url']
+        )
+
+    return market_search_dict
