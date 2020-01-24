@@ -1,1 +1,1 @@
-NO_PHOTO_ARG = '--no_photo'
+NO_IMAGE_ARG = '-no_image'

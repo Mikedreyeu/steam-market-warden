@@ -6,9 +6,10 @@ from telegram.ext import Updater, CommandHandler
 
 from market_api.api import get_item_info
 from settings import BOT_TOKEN
-from telegram_bot.constants import NO_PHOTO_ARG
+from telegram_bot.constants import NO_IMAGE_ARG
 from telegram_bot.exceptions.error_messages import (APPID_NOT_INT,
-                                                    BRACKETS_ERROR)
+                                                    BRACKETS_ERROR,
+                                                    NOT_ENOUGH_ARGS)
 from telegram_bot.exceptions.exceptions import CommandException
 from telegram_bot.message_builder import format_item_info
 from telegram_bot.utils import parse_args
@@ -29,11 +30,11 @@ def item_info(update, context):
     args = parse_args(context.args)
 
     if len(args) < 2:
-        raise CommandException(BRACKETS_ERROR)
+        raise CommandException(NOT_ENOUGH_ARGS)
 
-    no_photo = NO_PHOTO_ARG in args
+    no_photo = NO_IMAGE_ARG in args
     if no_photo:
-        args = [arg for arg in args if arg != NO_PHOTO_ARG]
+        args = [arg for arg in args if arg != NO_IMAGE_ARG]
 
     if not args[0].isdigit():
         raise CommandException(APPID_NOT_INT)

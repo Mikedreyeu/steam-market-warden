@@ -98,20 +98,21 @@ def get_item_info(appid: int, market_hash_name: str, currency: int = 1):
     if price_overview_response['success']:
         item_info.update(
             {
-                key: price_overview_response[key]
+                key: price_overview_response.get(key)
                 for key in PRICE_OVERVIEW_KEYS_TO_EXTRACT
             }
         )
 
-    if (market_search_response['success']
-            and market_search_response['total_count'] == 1):
+    # and market_search_response['total_count'] == 1
+    if market_search_response['success']:
         result = market_search_response['results'][0]
 
-        item_info.update({key: result[key] for key in SEARCH_KEYS_TO_EXTRACT})
+        item_info.update({key: result.get(key) for key in SEARCH_KEYS_TO_EXTRACT})
 
         item_info['icon_url'] = _build_icon_url(
             result['asset_description']['icon_url']
         )
+    # TODO: compare name with name in arg
 
     return item_info
 
