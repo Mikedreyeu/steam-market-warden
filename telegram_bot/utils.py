@@ -22,16 +22,21 @@ def parse_args(original_args: list):
     return arguments
 
 
-def send_message(update, message_text: str, no_image: bool, image_url: str):
+def send_message(
+        context, chat_id: int, message_text: str,
+        no_image: bool, image_url: str
+):
     if not no_image:
-        update.message.reply_photo(
+        context.bot.send_photo(
+            chat_id=chat_id,
             photo=image_url,
             caption=message_text,
             parse_mode=ParseMode.MARKDOWN
         )
     else:
-        update.message.reply_text(
-            message_text,
+        context.bot.send_message(
+            chat_id=chat_id,
+            text=message_text,
             parse_mode=ParseMode.MARKDOWN
         )
 

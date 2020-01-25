@@ -4,3 +4,5 @@ NO_IMAGE_ARG = '-no_image'
 FIRST, SECOND = range(2)
 # Callback data
 ONE, TWO, THREE, FOUR = range(4)
+
+DATETIME_FORMAT = '%H:%M %d.%m.%Y'

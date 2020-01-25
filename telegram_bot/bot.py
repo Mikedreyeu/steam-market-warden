@@ -1,24 +1,23 @@
 import logging
 import sys
 import traceback
-from time import sleep
+from datetime import datetime, timedelta, timezone
 
 from emoji import emojize
-from telegram import ParseMode, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, \
-    ConversationHandler
+from telegram import ParseMode
+from telegram.ext import Updater, CommandHandler
 from telegram.utils.helpers import mention_html
 
 from market_api.api import get_item_info, market_search_for_command
 from settings import BOT_TOKEN, CHAT_FOR_ERRORS
-from telegram_bot.constants import NO_IMAGE_ARG, FIRST, ONE, SECOND
+from telegram_bot.constants import NO_IMAGE_ARG, DATETIME_FORMAT
 from telegram_bot.exceptions.error_messages import (APPID_NOT_INT,
                                                     NOT_ENOUGH_ARGS, NOT_EXACT,
-                                                    NOT_ONE_ARG)
+                                                    WRONG_ARGUMENT_RUN_ONCE,
+                                                    NO_FUTURE)
 from telegram_bot.exceptions.exceptions import CommandException, ApiException
 from telegram_bot.message_builder import format_item_info, format_market_search
-from telegram_bot.utils import parse_args, send_typing_action, send_message, \
-    build_menu
+from telegram_bot.utils import parse_args, send_typing_action, send_message
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -48,14 +47,18 @@ def market_search_command(update, context):
     message_text = format_market_search(market_search_dict)
 
     send_message(
-        update, message_text, no_image, market_search_dict['icon_url']
+        context, update.effective_chat.id, message_text,
+        no_image, market_search_dict['icon_url']
     )
 
 
 @send_typing_action
 def item_info_command(update, context):
     args = parse_args(context.args)
+    _send_item_info(context, update.effective_chat.id, args)
 
+
+def _send_item_info(context, chat_id, args):
     if len(args) < 2:
         raise CommandException(NOT_ENOUGH_ARGS)
 
@@ -76,8 +79,9 @@ def item_info_command(update, context):
             use_aliases=True
         )
 
-    send_message(update, message_text, no_image, item_info_dict['icon_url'])
-
+    send_message(
+        context, chat_id, message_text, no_image, item_info_dict['icon_url']
+    )
 
 # def timed_item_info_command(update, context):
 #     keyboard = [InlineKeyboardButton('run_once', callback_data='1'),
@@ -88,21 +92,35 @@ def item_info_command(update, context):
 #
 #     update.message.reply_text('Please choose:', reply_markup=reply_markup)
 
-def tmp_command(context):
-    job = context.job
-    context.bot.send_message(job.context, text='Test!')
+
+def timed_item_info_run_once_job(context):
+    chat_id, args = context.job.context
+    _send_item_info(context, chat_id, args)
 
 
 def timed_item_info_run_once(update, context):
-    if len(context.args) != 1:
-        raise CommandException(NOT_ONE_ARG)
+    args = parse_args(context.args)
 
-    if not context.args[0].isdigit(): # + date
-        raise CommandException(WRONG_ARGUMENT_RUN_ONCE)
+    if args[0].isdigit():
+        when = int(args[0])
+    else:
+        try:
+            when = datetime.strptime(
+                f'{args[0]} {args[1]}',
+                DATETIME_FORMAT
+            ).replace(tzinfo=timezone(timedelta(hours=3))) # TODO: this timezone is temporary
+        except (ValueError, IndexError):
+            raise CommandException(WRONG_ARGUMENT_RUN_ONCE)
+
+        if when < datetime.now().replace(tzinfo=timezone(timedelta(hours=3))): # TODO: this timezone is temporary
+            raise CommandException(NO_FUTURE)
 
     chat_id = update.message.chat_id
+    job_context = (chat_id, args[args.index('-')+1:])
 
-    new_job = context.job_queue.run_once(tmp_command, 2, context=chat_id)
+    new_job = context.job_queue.run_once(
+        timed_item_info_run_once_job, when, context=job_context
+    )
 
     if not context.chat_data.get('timed_item_info_jobs'):
         context.chat_data['timed_item_info_jobs'] = {}
@@ -112,17 +130,18 @@ def timed_item_info_run_once(update, context):
     else:
         context.chat_data['timed_item_info_jobs']['run_once'].append(new_job)
 
+
 def help_command(update, context):
     update.message.reply_text('Help!')
 
 
 def error_handler(update, context):
     logger.warning(
-        'Update "%s" caused error "%s"', update, context.error_handler
+        'Update "%s" caused error "%s"', update, context.error
     )
-    if context.error_handler in (CommandException, ApiException):
+    if type(context.error) in (CommandException, ApiException):
         update.message.reply_text(
-            context.error_handler.message, parse_mode=ParseMode.MARKDOWN
+            context.error.message, parse_mode=ParseMode.MARKDOWN
         )
     else:
         payload = ''
@@ -143,9 +162,9 @@ def error_handler(update, context):
 
         trace = ''.join(traceback.format_tb(sys.exc_info()[2]))
         text = (
-            f'The error <code>{context.error_handler}</code> '
+            f'The error <code>{context.error}</code> '
             f'happened{payload}.\nThe full traceback:\n\n'
-            f'<code>{trace}/code>'
+            f'<code>{trace}</code>'
         )
 
         context.bot.send_message(
