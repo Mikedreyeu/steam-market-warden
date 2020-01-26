@@ -6,8 +6,6 @@ PRICE_OVERVIEW_KEYS_TO_EXTRACT = (
 SEARCH_KEYS_TO_EXTRACT = (
     'name',
     'sell_listings',
-    'sell_price',
-    'sell_price_text',
 )
 
 PRICE_OVERVIEW_URL = 'https://steamcommunity.com/market/priceoverview'

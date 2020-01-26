@@ -104,6 +104,7 @@ def get_item_info(appid: int, market_hash_name: str, currency: int = 1):
         item_info.update(
             {key: result.get(key) for key in SEARCH_KEYS_TO_EXTRACT}
         )
+        item_info['sell_price'] = float(result.get('sell_price_text')[1:])
 
         item_info['icon_url'] = build_icon_url(
             result['asset_description']['icon_url']
@@ -124,7 +125,8 @@ def get_item_info(appid: int, market_hash_name: str, currency: int = 1):
     if price_overview_response['success']:
         item_info.update(
             {
-                key: price_overview_response.get(key)
+                key: int(price_overview_response.get(key)) if key == 'volume'
+                else float(price_overview_response.get(key)[1:])
                 for key in PRICE_OVERVIEW_KEYS_TO_EXTRACT
             }
         )

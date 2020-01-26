@@ -2,7 +2,9 @@ from functools import wraps
 
 from telegram import ChatAction, ParseMode
 
-from telegram_bot.exceptions.error_messages import BRACKETS_ERROR
+from telegram_bot.constants import NO_IMAGE_ARG
+from telegram_bot.exceptions.error_messages import ERRMSG_BRACKETS_ERROR, \
+    ERRMSG_NOT_ENOUGH_ARGS, ERRMSG_APPID_NOT_INT
 from telegram_bot.exceptions.exceptions import CommandException
 
 
@@ -17,28 +19,23 @@ def parse_args(original_args: list):
                     arg += f' {next(args_iter)}'
             arguments.append(arg.strip(', "\'`'))
     except StopIteration:
-        raise CommandException(BRACKETS_ERROR)
+        raise CommandException(ERRMSG_BRACKETS_ERROR)
 
     return arguments
 
 
-def send_message(
-        context, chat_id: int, message_text: str,
-        no_image: bool, image_url: str
-):
-    if not no_image:
-        context.bot.send_photo(
-            chat_id=chat_id,
-            photo=image_url,
-            caption=message_text,
-            parse_mode=ParseMode.MARKDOWN
-        )
-    else:
-        context.bot.send_message(
-            chat_id=chat_id,
-            text=message_text,
-            parse_mode=ParseMode.MARKDOWN
-        )
+def parse_item_info_args(args):
+    if len(args) < 2:
+        raise CommandException(ERRMSG_NOT_ENOUGH_ARGS)
+
+    if not args[0].isdigit():
+        raise CommandException(ERRMSG_APPID_NOT_INT)
+
+    no_image = NO_IMAGE_ARG in args
+    if no_image:
+        args = [arg for arg in args if arg != NO_IMAGE_ARG]
+
+    return args, no_image
 
 
 def build_menu(buttons, n_cols, header_buttons=None, footer_buttons=None):
@@ -59,3 +56,23 @@ def send_typing_action(func):
         return func(update, context,  *args, **kwargs)
 
     return command_func
+
+
+def send_item_message(
+        context, chat_id: int, message_text: str,
+        no_image: bool, image_url: str
+):
+    if not no_image:
+        context.bot.send_photo(
+            chat_id=chat_id,
+            photo=image_url,
+            caption=message_text,
+            parse_mode=ParseMode.MARKDOWN
+        )
+    else:
+        context.bot.send_message(
+            chat_id=chat_id,
+            text=message_text,
+            parse_mode=ParseMode.MARKDOWN
+        )
+
