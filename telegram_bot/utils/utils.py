@@ -1,11 +1,16 @@
+from datetime import timezone, timedelta, datetime
 from functools import wraps
 
+from emoji import emojize
 from telegram import ChatAction, ParseMode
 
-from telegram_bot.constants import NO_IMAGE_ARG
+from market_api.api import get_item_info
+from telegram_bot.constants import NO_IMAGE_ARG, DATETIME_FORMAT
 from telegram_bot.exceptions.error_messages import ERRMSG_BRACKETS_ERROR, \
-    ERRMSG_NOT_ENOUGH_ARGS, ERRMSG_APPID_NOT_INT
+    ERRMSG_NOT_ENOUGH_ARGS, ERRMSG_APPID_NOT_INT, WRNMSG_NOT_EXACT, \
+    ERRMSG_WRONG_ARGUMENT_RUN_ONCE, ERRMSG_NO_FUTURE
 from telegram_bot.exceptions.exceptions import CommandException
+from telegram_bot.utils.message_builder import format_item_info
 
 
 def parse_args(original_args: list):
@@ -36,6 +41,20 @@ def parse_item_info_args(args):
         args = [arg for arg in args if arg != NO_IMAGE_ARG]
 
     return args, no_image
+
+
+def parse_datetime(datetime_str, datetime_format=DATETIME_FORMAT):
+    try:
+        dt_object = datetime.strptime(
+            datetime_str, datetime_format
+        ).replace(tzinfo=timezone(timedelta(hours=3)))  # TODO: this timezone is temporary
+    except (ValueError, IndexError):
+        raise CommandException(ERRMSG_WRONG_ARGUMENT_RUN_ONCE)
+
+    if dt_object < datetime.now().replace(tzinfo=timezone(timedelta(hours=3))):  # TODO: this timezone is temporary
+        raise CommandException(ERRMSG_NO_FUTURE)
+
+    return dt_object
 
 
 def build_menu(buttons, n_cols, header_buttons=None, footer_buttons=None):
@@ -76,3 +95,26 @@ def send_item_message(
             parse_mode=ParseMode.MARKDOWN
         )
 
+
+def send_item_info(
+        context, chat_id: int, args: list, add_to_message: str = None
+):
+    args, no_image = parse_item_info_args(args)
+
+    item_info_dict = get_item_info(args[0], args[1])
+
+    message_text = format_item_info(item_info_dict)
+
+    if not item_info_dict['exact_item']:
+        message_text = (
+            f'{message_text}\n\n:information_source: {WRNMSG_NOT_EXACT}'
+        )
+
+    if add_to_message:
+        message_text += add_to_message
+
+    message_text = emojize(message_text, use_aliases=True)
+
+    send_item_message(
+        context, chat_id, message_text, no_image, item_info_dict['icon_url']
+    )

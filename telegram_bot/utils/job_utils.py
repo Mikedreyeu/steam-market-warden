@@ -8,7 +8,7 @@ from telegram_bot.constants import JOBS_PICKLE
 
 def init_chat_data(chat_data):
     if not chat_data.get('timed_item_info_jobs'):
-        chat_data['timed_item_info_jobs'] = defaultdict(list)
+        chat_data['timed_item_info_jobs'] = []
     if not chat_data.get('item_info_alert_jobs'):
         chat_data['item_info_alert_jobs'] = []
 

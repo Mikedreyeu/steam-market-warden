@@ -8,24 +8,20 @@ from telegram import ParseMode
 from telegram.ext import Updater, CommandHandler
 from telegram.utils.helpers import mention_html
 
-from market_api.api import get_item_info, market_search_for_command
+from market_api.api import market_search_for_command
 from settings import BOT_TOKEN, CHAT_FOR_ERRORS
-from telegram_bot.constants import NO_IMAGE_ARG, DATETIME_FORMAT, GT_POSTFIX, \
-    LT_POSTFIX, GTE_POSTFIX, \
-    LTE_POSTFIX, COND_SEPARATOR, KV_SEPARATOR, ALLOWED_KEYS_FOR_ALARM, \
-    SELL_PRICE, MEDIAN_PRICE, CURRENCY_SYMBOL
+from telegram_bot.constants import NO_IMAGE_ARG, DATETIME_FORMAT, MINUTES, \
+    HOURS, DAYS
 from telegram_bot.exceptions.error_messages import (ERRMSG_NOT_ENOUGH_ARGS,
-                                                    WRNMSG_NOT_EXACT,
                                                     ERRMSG_WRONG_ARGUMENT_RUN_ONCE,
-                                                    ERRMSG_NO_FUTURE,
-                                                    ERRMSG_ALARM_NOT_ALLOWED_KEYS,
-                                                    ERRMSG_ALARM_NOT_VALID_POSTFIX,
-                                                    ERRMSG_ALARM_NOT_VALID_CONDITIONS)
+                                                    ERRMSG_NO_FUTURE)
 from telegram_bot.exceptions.exceptions import CommandException, ApiException
-from telegram_bot.utils.message_builder import format_item_info, format_market_search
+from telegram_bot.jobs import timed_item_info_job, \
+    check_values_of_an_item_info_job
 from telegram_bot.utils.job_utils import init_chat_data, save_jobs, load_jobs
+from telegram_bot.utils.message_builder import format_market_search
 from telegram_bot.utils.utils import parse_args, send_typing_action, \
-    send_item_message, parse_item_info_args
+    send_item_message, send_item_info, parse_datetime
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -63,31 +59,8 @@ def market_search_command(update, context):
 @send_typing_action
 def item_info_command(update, context):
     args = parse_args(context.args)
-    _send_item_info(context, update.effective_chat.id, args)
+    send_item_info(context, update.effective_chat.id, args)
 
-
-def _send_item_info(
-        context, chat_id: int, args: list, add_to_message: str = None
-):
-    args, no_image = parse_item_info_args(args)
-
-    item_info_dict = get_item_info(args[0], args[1])
-
-    message_text = format_item_info(item_info_dict)
-
-    if not item_info_dict['exact_item']:
-        message_text = (
-            f'{message_text}\n\n:information_source: {WRNMSG_NOT_EXACT}'
-        )
-
-    if add_to_message:
-        message_text += add_to_message
-
-    message_text = emojize(message_text, use_aliases=True)
-
-    send_item_message(
-        context, chat_id, message_text, no_image, item_info_dict['icon_url']
-    )
 
 # def timed_item_info_command(update, context):
 #     keyboard = [InlineKeyboardButton('run_once', callback_data='1'),
@@ -105,16 +78,7 @@ def timed_item_info_command(update, context):
     if args[0].isdigit():
         when = int(args[0])
     else:
-        try:
-            when = datetime.strptime(
-                f'{args[0]} {args[1]}',
-                DATETIME_FORMAT
-            ).replace(tzinfo=timezone(timedelta(hours=3))) # TODO: this timezone is temporary
-        except (ValueError, IndexError):
-            raise CommandException(ERRMSG_WRONG_ARGUMENT_RUN_ONCE)
-
-        if when < datetime.now().replace(tzinfo=timezone(timedelta(hours=3))): # TODO: this timezone is temporary
-            raise CommandException(ERRMSG_NO_FUTURE)
+        when = parse_datetime(f'{args[0]} {args[1]}')
 
     init_chat_data(context.chat_data)
 
@@ -129,7 +93,26 @@ def timed_item_info_command(update, context):
         timed_item_info_job, when, context=job_context
     )
 
-    context.chat_data['timed_item_info_jobs']['run_once'].append(new_job)
+    context.chat_data['timed_item_info_jobs'].append(new_job)
+
+
+def repeated_item_info_command(update, context):
+    args = parse_args(context.args)
+
+    chat_id = update.message.chat_id
+
+    if args[0][:-1].isdigit() and args[0][-1] in (MINUTES, HOURS, DAYS):
+        interval = int(args[0][:-1])
+
+    first = parse_datetime(f'{args[1]} {args[2]}')
+
+    init_chat_data(context.chat_data)
+
+    job_context = {
+        'chat_id': chat_id,
+        'args': args[args.index('-') + 1:],
+        'chat_jobs': context.chat_data['timed_item_info_jobs']
+    }
 
 
 def alarm_item_info_command(update, context):
@@ -146,99 +129,16 @@ def alarm_item_info_command(update, context):
         'chat_jobs': context.chat_data['item_info_alert_jobs']
     }
 
+    context.job_queue.run_once(
+        check_values_of_an_item_info_job, 1, context=job_context
+    )
+
     new_job = context.job_queue.run_repeating(
-        check_values_of_an_item_info_job, timedelta(seconds=5),  # TODO: Change time
+        check_values_of_an_item_info_job, timedelta(minutes=20),
         context=job_context
     )
 
     context.chat_data['item_info_alert_jobs'].append(new_job)
-
-
-def check_values_of_an_item_info_job(context):
-    args, no_image = parse_item_info_args(context.job.context['args'])
-
-    item_info_dict = get_item_info(args[0], args[1])
-
-    meets_conditions_list = []
-
-    for condition in context.job.context['conditions']:
-        try:
-            cond_key, cond_value = condition.lower().split(KV_SEPARATOR)
-            key_name, postfix = cond_key.split(COND_SEPARATOR)
-
-            if key_name in (SELL_PRICE, MEDIAN_PRICE):
-                currency_symbol = CURRENCY_SYMBOL
-                cond_value = float(cond_value)
-            else:
-                currency_symbol = ''
-                cond_value = int(cond_value)
-        except ValueError:
-            raise CommandException(ERRMSG_ALARM_NOT_VALID_CONDITIONS)
-
-        if key_name not in ALLOWED_KEYS_FOR_ALARM:
-            raise CommandException(ERRMSG_ALARM_NOT_ALLOWED_KEYS)
-
-        alarm_text = (
-            f'<b>{key_name}: {currency_symbol}{item_info_dict[key_name]}</b>'
-            f' {{}} '
-            f'{currency_symbol}{cond_value}'
-        )
-
-        if postfix == GT_POSTFIX:
-            if item_info_dict[key_name] > cond_value:
-                meets_conditions_list.append(
-                    alarm_text.format('>')
-                )
-        elif postfix == LT_POSTFIX:
-            if item_info_dict[key_name] < cond_value:
-                meets_conditions_list.append(
-                    alarm_text.format('<')
-                )
-        elif postfix == GTE_POSTFIX:
-            if item_info_dict[key_name] >= cond_value:
-                meets_conditions_list.append(
-                    alarm_text.format('>=')
-                )
-        elif postfix == LTE_POSTFIX:
-            if item_info_dict[key_name] <= cond_value:
-                meets_conditions_list.append(
-                    alarm_text.format('<=')
-                )
-        else:
-            raise CommandException(ERRMSG_ALARM_NOT_VALID_POSTFIX)
-
-    if len(meets_conditions_list) == len(context.job.context['conditions']):
-        chat_id = context.job.context['chat_id']
-
-        formatted_condition_list = "\n".join(meets_conditions_list)
-        context.bot.send_message(
-            chat_id, emojize(
-                f':rotating_light: <b>Item alarm</b> \n{formatted_condition_list}'
-                , use_aliases=True
-            ),
-            parse_mode=ParseMode.HTML
-        )
-
-        send_item_message(
-            context, chat_id, format_item_info(item_info_dict),
-            no_image, item_info_dict['icon_url']
-        )
-
-        context.job.schedule_removal()
-        context.job.context['chat_jobs'].remove(context.job)
-
-
-def save_jobs_job(context):
-    save_jobs(context.job_queue)
-
-
-def timed_item_info_job(context):
-    _send_item_info(
-        context, context.job.context['chat_id'], context.job.context['args'],
-        add_to_message=f'\n\n:alarm_clock: _Timed item info request_'
-    )
-
-    context.job.context['chat_jobs'].remove(context.job)
 
 
 def help_command(update, context):
@@ -254,6 +154,12 @@ def error_handler(update, context):
             context.error.message, parse_mode=ParseMode.MARKDOWN
         )
     else:
+        update.message.reply_text(
+            emojize(
+                ':thinking_face: Something went wrong...', use_aliases=True
+            )
+        )
+
         payload = ''
 
         if update.effective_user:
@@ -310,6 +216,9 @@ def main():
     dp.add_handler(CommandHandler('market_search', market_search_command))
     dp.add_handler(
         CommandHandler('timed_item_info', timed_item_info_command)
+    )
+    dp.add_handler(
+        CommandHandler('repeated_item_info', repeated_item_info_command)
     )
     dp.add_handler(
         CommandHandler('alarm_item_info', alarm_item_info_command)
