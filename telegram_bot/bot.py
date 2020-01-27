@@ -2,11 +2,12 @@ import logging
 import re
 import sys
 import traceback
-from datetime import timedelta
+from datetime import timedelta, datetime, timezone
 
 from emoji import emojize
 from telegram import ParseMode
 from telegram.ext import Updater, CommandHandler
+from telegram.ext.jobqueue import Days
 from telegram.utils.helpers import mention_html
 
 from market_api.api import market_search_for_command
@@ -18,11 +19,14 @@ from telegram_bot.exceptions.error_messages import (ERRMSG_NOT_ENOUGH_ARGS,
                                                     ERRMSG_WRONG_DOTW_FORMAT)
 from telegram_bot.exceptions.exceptions import CommandException, ApiException
 from telegram_bot.jobs import item_info_timed_job, \
-    check_values_of_an_item_info_job, item_info_repeating_job
-from telegram_bot.utils.job_utils import init_chat_data, save_jobs, load_jobs
-from telegram_bot.utils.message_builder import format_market_search
+    check_values_of_an_item_info_job, item_info_repeating_job, \
+    item_info_daily_job
+from telegram_bot.utils.job_utils import save_jobs, load_jobs, \
+    init_list_chat_data
+from telegram_bot.utils.message_builder import format_market_search, \
+    format_days_of_the_week, format_alerts_conditions
 from telegram_bot.utils.utils import parse_args, send_typing_action, \
-    send_item_message, send_item_info, parse_datetime
+    send_item_message, send_item_info, parse_datetime, parse_time
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -33,7 +37,7 @@ logger = logging.getLogger(__name__)
 
 
 def start_command(update, context):
-    update.message.reply_text('Hi!')
+    context.bot.send_message(chat_id=update.effective_chat.id, text='Hi!')
 
 
 @send_typing_action
@@ -81,20 +85,37 @@ def item_info_timed_command(update, context):
     else:
         when = parse_datetime(f'{args[0]} {args[1]}')
 
-    init_chat_data(context.chat_data)
+    init_list_chat_data(context.chat_data, 'item_info_timed_jobs')
 
     chat_id = update.message.chat_id
     job_context = {
         'chat_id': chat_id,
         'args': args[args.index('-')+1:],
-        'chat_jobs': context.chat_data['item_info_timed_jobs']['run_once']
+        'chat_jobs': context.chat_data['item_info_timed_jobs']
     }
 
     new_job = context.job_queue.run_once(
-        item_info_timed_job, when, context=job_context
+        item_info_timed_job, when, job_context
     )
 
     context.chat_data['item_info_timed_jobs'].append(new_job)
+
+    if isinstance(when, int):
+        success_part = f'{when} seconds from now'
+    else:
+        success_part = when
+
+    success_text = (
+        f':steam_locomotive: <b>Timed item info set</b>\n'
+        f'<b>Item:</b> {", ".join(args[args.index("-")+1:])}\n'
+        f'<b>Time:</b> {success_part}'
+    )
+
+    context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text=emojize(success_text, use_aliases=True),
+        parse_mode=ParseMode.HTML
+    )
 
 
 def item_info_repeating_command(update, context):
@@ -104,60 +125,92 @@ def item_info_repeating_command(update, context):
 
     interval_str = args[0]
 
-    if not re.fullmatch(f'({INTERVAL_UNIT_REGEX})+', interval_str):
+    if not re.fullmatch(fr'({INTERVAL_UNIT_REGEX})+', interval_str):
         raise CommandException(ERRMSG_WRONG_INTERVAL_FORMAT)
 
     interval_tuples = re.findall(INTERVAL_UNIT_REGEX, interval_str)
     timedelta_kwargs = {
-        TIMEDELTA_KEYS[interval_letter]: interval_units
+        TIMEDELTA_KEYS[interval_letter]: int(interval_units)
         for interval_units, interval_letter in interval_tuples
     }
     interval = timedelta(**timedelta_kwargs)
 
-    first = parse_datetime(f'{args[1]} {args[2]}')
+    if args.index('-') >= 3:
+        first = parse_datetime(f'{args[1]} {args[2]}')
+    else:
+        first = datetime.now(tz=timezone(timedelta(hours=3)))
 
-    init_chat_data(context.chat_data)
+    init_list_chat_data(context.chat_data, 'item_info_repeating_jobs')
 
     job_context = {
         'chat_id': chat_id,
-        'args': args[args.index('-') + 1:],
+        'args': args[args.index('-')+1:],
         'chat_jobs': context.chat_data['item_info_repeating_jobs']
     }
 
     new_job = context.job_queue.run_repeating(
-        item_info_repeating_job, interval, first, context=job_context
+        item_info_repeating_job, interval, first, job_context
     )
 
     context.chat_data['item_info_repeating_jobs'].append(new_job)
 
+    success_text = (
+        f':articulated_lorry: <b>Repeating item info set</b>\n'
+        f'<b>Item:</b> {", ".join(args[args.index("-")+1:])}\n'
+        f'Every {interval}\n'
+        f'Starting at {first}'
+    )
 
-# TODO: rename to daily and add functionality to run it daily without args
-def item_info_repeating_days_of_the_week_command(update, context):
+    context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text=emojize(success_text, use_aliases=True),
+        parse_mode=ParseMode.HTML
+    )
+
+
+def item_info_daily_command(update, context):
     args = parse_args(context.args)
 
     chat_id = update.message.chat_id
 
-    try:
-        days_otw = [int(dotw) - 1 for dotw in args[0].split(',')]
-    except:
-        raise CommandException(ERRMSG_WRONG_DOTW_FORMAT)
+    if args.index('-') >= 2:
+        time_str = args[1]
+        try:
+            days_otw = tuple(int(dotw) - 1 for dotw in args[0].split(','))
+        except (ValueError, IndexError):
+            raise CommandException(ERRMSG_WRONG_DOTW_FORMAT)
+    else:
+        days_otw = Days.EVERY_DAY
+        time_str = args[0]
 
-    # parse time
-    time = None
+    time_object = parse_time(time_str)
 
-    init_chat_data(context.chat_data)
+    init_list_chat_data(context.chat_data, 'item_info_daily_jobs')
 
     job_context = {
         'chat_id': chat_id,
-        'args': args[args.index('-') + 1:],
-        'chat_jobs': context.chat_data['item_info_repeating_jobs']
+        'args': args[args.index('-')+1:],
+        'chat_jobs': context.chat_data['item_info_daily_jobs']
     }
 
-    new_job = context.job_queue.run_repeating(
-        None, days_otw, time, context=job_context
+    new_job = context.job_queue.run_daily(
+        item_info_daily_job, time_object, days_otw, job_context
     )
 
-    context.chat_data['item_info_repeating_dotw_jobs'].append(new_job)
+    context.chat_data['item_info_daily_jobs'].append(new_job)
+
+    success_text = (
+        f':truck: <b>Daily item info set</b>\n'
+        f'<b>Item:</b> {", ".join(args[args.index("-")+1:])}\n'
+        f'<b>Days:</b> {format_days_of_the_week(days_otw)}\n'
+        f'<b>Time:</b> {time_object}'
+    )
+
+    context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text=emojize(success_text, use_aliases=True),
+        parse_mode=ParseMode.HTML
+    )
 
 
 def item_info_alarm_command(update, context):
@@ -165,7 +218,7 @@ def item_info_alarm_command(update, context):
 
     chat_id = update.message.chat_id
 
-    init_chat_data(context.chat_data)
+    init_list_chat_data(context.chat_data, 'item_info_alert_jobs')
 
     job_context = {
         'chat_id': chat_id,
@@ -175,7 +228,7 @@ def item_info_alarm_command(update, context):
     }
 
     context.job_queue.run_once(
-        check_values_of_an_item_info_job, 1, context=job_context
+        check_values_of_an_item_info_job, 1, job_context
     )
 
     new_job = context.job_queue.run_repeating(
@@ -185,9 +238,21 @@ def item_info_alarm_command(update, context):
 
     context.chat_data['item_info_alert_jobs'].append(new_job)
 
+    success_text = (
+        f':nail_care: <b>Alarm set</b>\n'
+        f'<b>Item:</b> {", ".join(args[args.index("-")+1:])}\n'
+        f'{format_alerts_conditions(args[:args.index("-")])}'
+    )
+
+    context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text=emojize(success_text, use_aliases=True),
+        parse_mode=ParseMode.HTML
+    )
+
 
 def help_command(update, context):
-    update.message.reply_text('Help!')
+    context.bot.send_message(chat_id=update.effective_chat.id, text='Help!')
 
 
 def error_handler(update, context):
@@ -195,12 +260,14 @@ def error_handler(update, context):
         'Update "%s" caused error "%s"', update, context.error
     )
     if type(context.error) in (CommandException, ApiException):
-        update.message.reply_text(
-            context.error.message, parse_mode=ParseMode.MARKDOWN
+        context.bot.send_message(
+            chat_id=update.effective_chat.id, text=context.error.message,
+            parse_mode=ParseMode.MARKDOWN
         )
     else:
-        update.message.reply_text(
-            emojize(
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=emojize(
                 ':thinking_face: Something went wrong...', use_aliases=True
             )
         )
@@ -266,7 +333,7 @@ def main():
         CommandHandler('item_info_repeating', item_info_repeating_command)
     )
     dp.add_handler(
-        CommandHandler('item_info_repeating_dotw', item_info_repeating_days_of_the_week_command)
+        CommandHandler('item_info_daily', item_info_daily_command)
     )
     dp.add_handler(
         CommandHandler('item_info_alarm', item_info_alarm_command)

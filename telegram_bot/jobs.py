@@ -4,7 +4,7 @@ from telegram import ParseMode
 from market_api.api import get_item_info
 from telegram_bot.constants import KV_SEPARATOR, COND_SEPARATOR, SELL_PRICE, \
     MEDIAN_PRICE, CURRENCY_SYMBOL, ALLOWED_KEYS_FOR_ALARM, GT_POSTFIX, \
-    LT_POSTFIX, GTE_POSTFIX, LTE_POSTFIX
+    LT_POSTFIX, GTE_POSTFIX, LTE_POSTFIX, POSTFIX_TO_SYMBOL
 from telegram_bot.exceptions.error_messages import \
     ERRMSG_ALARM_NOT_VALID_CONDITIONS, ERRMSG_ALARM_NOT_ALLOWED_KEYS, \
     ERRMSG_ALARM_NOT_VALID_POSTFIX
@@ -45,26 +45,22 @@ def check_values_of_an_item_info_job(context):
             f'{currency_symbol}{cond_value}'
         )
 
-        if postfix == GT_POSTFIX:
-            if item_info_dict[key_name] > cond_value:
-                meets_conditions_list.append(
-                    alarm_text.format('>')
-                )
-        elif postfix == LT_POSTFIX:
-            if item_info_dict[key_name] < cond_value:
-                meets_conditions_list.append(
-                    alarm_text.format('<')
-                )
-        elif postfix == GTE_POSTFIX:
-            if item_info_dict[key_name] >= cond_value:
-                meets_conditions_list.append(
-                    alarm_text.format('>=')
-                )
-        elif postfix == LTE_POSTFIX:
-            if item_info_dict[key_name] <= cond_value:
-                meets_conditions_list.append(
-                    alarm_text.format('<=')
-                )
+        if postfix == GT_POSTFIX and item_info_dict[key_name] > cond_value:
+            meets_conditions_list.append(
+                alarm_text.format(POSTFIX_TO_SYMBOL[GT_POSTFIX])
+            )
+        elif postfix == LT_POSTFIX and item_info_dict[key_name] < cond_value:
+            meets_conditions_list.append(
+                alarm_text.format(POSTFIX_TO_SYMBOL[LT_POSTFIX])
+            )
+        elif postfix == GTE_POSTFIX and item_info_dict[key_name] >= cond_value:
+            meets_conditions_list.append(
+                alarm_text.format(POSTFIX_TO_SYMBOL[GTE_POSTFIX])
+            )
+        elif postfix == LTE_POSTFIX and item_info_dict[key_name] <= cond_value:
+            meets_conditions_list.append(
+                alarm_text.format(POSTFIX_TO_SYMBOL[LTE_POSTFIX])
+            )
         else:
             raise CommandException(ERRMSG_ALARM_NOT_VALID_POSTFIX)
 
@@ -96,12 +92,16 @@ def item_info_repeating_job(context):
         add_to_message=f'\n\n:alarm_clock: _Repeating item info request_'
     )
 
-    context.job.schedule_removal()
     context.job.context['chat_jobs'].remove(context.job)
 
 
-def save_jobs_job(context):
-    save_jobs(context.job_queue)
+def item_info_daily_job(context):
+    send_item_info(
+        context, context.job.context['chat_id'], context.job.context['args'],
+        add_to_message=f'\n\n:alarm_clock: _Daily item info request_'
+    )
+
+    context.job.context['chat_jobs'].remove(context.job)
 
 
 def item_info_timed_job(context):
@@ -110,4 +110,9 @@ def item_info_timed_job(context):
         add_to_message=f'\n\n:alarm_clock: _Timed item info request_'
     )
 
+    context.job.schedule_removal()
     context.job.context['chat_jobs'].remove(context.job)
+
+
+def save_jobs_job(context):
+    save_jobs(context.job_queue)

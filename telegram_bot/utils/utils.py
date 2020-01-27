@@ -1,4 +1,4 @@
-from datetime import timezone, timedelta, datetime
+from datetime import timezone, timedelta, datetime, time
 from functools import wraps
 
 from emoji import emojize
@@ -8,7 +8,7 @@ from market_api.api import get_item_info
 from telegram_bot.constants import NO_IMAGE_ARG, DATETIME_FORMAT
 from telegram_bot.exceptions.error_messages import ERRMSG_BRACKETS_ERROR, \
     ERRMSG_NOT_ENOUGH_ARGS, ERRMSG_APPID_NOT_INT, WRNMSG_NOT_EXACT, \
-    ERRMSG_WRONG_ARGUMENT_RUN_ONCE, ERRMSG_NO_FUTURE
+    ERRMSG_WRONG_DATE_FORMAT, ERRMSG_NO_FUTURE, ERRMSG_WRONG_TIME_FORMAT
 from telegram_bot.exceptions.exceptions import CommandException
 from telegram_bot.utils.message_builder import format_item_info
 
@@ -43,13 +43,22 @@ def parse_item_info_args(args):
     return args, no_image
 
 
+def parse_time(time_str):
+    try:
+        return time.fromisoformat(
+            time_str
+        ).replace(tzinfo=timezone(timedelta(hours=3)))  # TODO: this timezone is temporary
+    except ValueError:
+        raise CommandException(ERRMSG_WRONG_TIME_FORMAT)
+
+
 def parse_datetime(datetime_str, datetime_format=DATETIME_FORMAT):
     try:
         dt_object = datetime.strptime(
             datetime_str, datetime_format
         ).replace(tzinfo=timezone(timedelta(hours=3)))  # TODO: this timezone is temporary
-    except (ValueError, IndexError):
-        raise CommandException(ERRMSG_WRONG_ARGUMENT_RUN_ONCE)
+    except ValueError:
+        raise CommandException(ERRMSG_WRONG_DATE_FORMAT)
 
     if dt_object < datetime.now().replace(tzinfo=timezone(timedelta(hours=3))):  # TODO: this timezone is temporary
         raise CommandException(ERRMSG_NO_FUTURE)

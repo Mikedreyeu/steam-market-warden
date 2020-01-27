@@ -1,3 +1,10 @@
+from telegram.ext.jobqueue import Days
+
+from telegram_bot.constants import KV_SEPARATOR, COND_SEPARATOR, SELL_PRICE, \
+    MEDIAN_PRICE, CURRENCY_SYMBOL, GT_POSTFIX, LT_POSTFIX, GTE_POSTFIX, \
+    LTE_POSTFIX, POSTFIX_TO_SYMBOL
+
+
 def format_item_info(item_info):
     return (
         f'*Name:* {item_info.get("name")}\n'
@@ -14,3 +21,53 @@ def format_market_search(market_search):
         f'*Sell price:* {market_search.get("sell_price_text")}\n'
         f'*Sell listings:* {market_search.get("sell_listings")}'
     )
+
+
+def format_days_of_the_week(days_list):
+    if days_list == Days.EVERY_DAY:
+        return 'Every day'
+    result = ''
+
+    for day in days_list:
+        if day == 0:
+            result += 'Monday'
+        elif day == 1:
+            result += 'Tuesday'
+        elif day == 2:
+            result += 'Wednesday'
+        elif day == 3:
+            result += 'Thursday'
+        elif day == 4:
+            result += 'Friday'
+        elif day == 5:
+            result += 'Saturday'
+        elif day == 6:
+            result += 'Sunday'
+
+        result += ', '
+
+    return result[:-2]
+
+
+def format_alerts_conditions(conditions):
+    result_text = '<b>Conditions:</b>'
+
+    for condition in conditions:
+        cond_key, cond_value = condition.lower().split(KV_SEPARATOR)
+        key_name, postfix = cond_key.split(COND_SEPARATOR)
+
+        if key_name not in (SELL_PRICE, MEDIAN_PRICE):
+            currency_symbol = ''
+            cond_value = int(cond_value)
+        else:
+            currency_symbol = CURRENCY_SYMBOL
+            cond_value = float(cond_value)
+
+        condition_text = (
+            f'{key_name} {POSTFIX_TO_SYMBOL[postfix]} '
+            f'{currency_symbol}{cond_value}'
+        )
+
+        result_text = f'{result_text}\n{condition_text}'
+
+    return result_text
