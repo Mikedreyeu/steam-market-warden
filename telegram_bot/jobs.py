@@ -90,11 +90,21 @@ def check_values_of_an_item_info_job(context):
         context.job.context['chat_jobs'].remove(context.job)
 
 
+def item_info_repeating_job(context):
+    send_item_info(
+        context, context.job.context['chat_id'], context.job.context['args'],
+        add_to_message=f'\n\n:alarm_clock: _Repeating item info request_'
+    )
+
+    context.job.schedule_removal()
+    context.job.context['chat_jobs'].remove(context.job)
+
+
 def save_jobs_job(context):
     save_jobs(context.job_queue)
 
 
-def timed_item_info_job(context):
+def item_info_timed_job(context):
     send_item_info(
         context, context.job.context['chat_id'], context.job.context['args'],
         add_to_message=f'\n\n:alarm_clock: _Timed item info request_'

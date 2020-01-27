@@ -30,3 +30,13 @@ CURRENCY_SYMBOL = '$'  # tmp
 MINUTES = 'm'
 HOURS = 'h'
 DAYS = 'd'
+WEEKS = 'w'
+
+TIMEDELTA_KEYS = {
+    MINUTES: 'minutes',
+    HOURS: 'hours',
+    DAYS: 'days',
+    WEEKS: 'weeks'
+}
+
+INTERVAL_UNIT_REGEX = f'(\d+)([{MINUTES}{HOURS}{DAYS}{WEEKS}])'

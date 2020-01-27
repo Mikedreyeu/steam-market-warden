@@ -1,7 +1,8 @@
 import logging
+import re
 import sys
 import traceback
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
 
 from emoji import emojize
 from telegram import ParseMode
@@ -10,14 +11,14 @@ from telegram.utils.helpers import mention_html
 
 from market_api.api import market_search_for_command
 from settings import BOT_TOKEN, CHAT_FOR_ERRORS
-from telegram_bot.constants import NO_IMAGE_ARG, DATETIME_FORMAT, MINUTES, \
-    HOURS, DAYS
+from telegram_bot.constants import NO_IMAGE_ARG, TIMEDELTA_KEYS, \
+    INTERVAL_UNIT_REGEX
 from telegram_bot.exceptions.error_messages import (ERRMSG_NOT_ENOUGH_ARGS,
-                                                    ERRMSG_WRONG_ARGUMENT_RUN_ONCE,
-                                                    ERRMSG_NO_FUTURE)
+                                                    ERRMSG_WRONG_INTERVAL_FORMAT,
+                                                    ERRMSG_WRONG_DOTW_FORMAT)
 from telegram_bot.exceptions.exceptions import CommandException, ApiException
-from telegram_bot.jobs import timed_item_info_job, \
-    check_values_of_an_item_info_job
+from telegram_bot.jobs import item_info_timed_job, \
+    check_values_of_an_item_info_job, item_info_repeating_job
 from telegram_bot.utils.job_utils import init_chat_data, save_jobs, load_jobs
 from telegram_bot.utils.message_builder import format_market_search
 from telegram_bot.utils.utils import parse_args, send_typing_action, \
@@ -72,7 +73,7 @@ def item_info_command(update, context):
 #     update.message.reply_text('Please choose:', reply_markup=reply_markup)
 
 
-def timed_item_info_command(update, context):
+def item_info_timed_command(update, context):
     args = parse_args(context.args)
 
     if args[0].isdigit():
@@ -86,23 +87,32 @@ def timed_item_info_command(update, context):
     job_context = {
         'chat_id': chat_id,
         'args': args[args.index('-')+1:],
-        'chat_jobs': context.chat_data['timed_item_info_jobs']['run_once']
+        'chat_jobs': context.chat_data['item_info_timed_jobs']['run_once']
     }
 
     new_job = context.job_queue.run_once(
-        timed_item_info_job, when, context=job_context
+        item_info_timed_job, when, context=job_context
     )
 
-    context.chat_data['timed_item_info_jobs'].append(new_job)
+    context.chat_data['item_info_timed_jobs'].append(new_job)
 
 
-def repeated_item_info_command(update, context):
+def item_info_repeating_command(update, context):
     args = parse_args(context.args)
 
     chat_id = update.message.chat_id
 
-    if args[0][:-1].isdigit() and args[0][-1] in (MINUTES, HOURS, DAYS):
-        interval = int(args[0][:-1])
+    interval_str = args[0]
+
+    if not re.fullmatch(f'({INTERVAL_UNIT_REGEX})+', interval_str):
+        raise CommandException(ERRMSG_WRONG_INTERVAL_FORMAT)
+
+    interval_tuples = re.findall(INTERVAL_UNIT_REGEX, interval_str)
+    timedelta_kwargs = {
+        TIMEDELTA_KEYS[interval_letter]: interval_units
+        for interval_units, interval_letter in interval_tuples
+    }
+    interval = timedelta(**timedelta_kwargs)
 
     first = parse_datetime(f'{args[1]} {args[2]}')
 
@@ -111,11 +121,46 @@ def repeated_item_info_command(update, context):
     job_context = {
         'chat_id': chat_id,
         'args': args[args.index('-') + 1:],
-        'chat_jobs': context.chat_data['timed_item_info_jobs']
+        'chat_jobs': context.chat_data['item_info_repeating_jobs']
     }
 
+    new_job = context.job_queue.run_repeating(
+        item_info_repeating_job, interval, first, context=job_context
+    )
 
-def alarm_item_info_command(update, context):
+    context.chat_data['item_info_repeating_jobs'].append(new_job)
+
+
+# TODO: rename to daily and add functionality to run it daily without args
+def item_info_repeating_days_of_the_week_command(update, context):
+    args = parse_args(context.args)
+
+    chat_id = update.message.chat_id
+
+    try:
+        days_otw = [int(dotw) - 1 for dotw in args[0].split(',')]
+    except:
+        raise CommandException(ERRMSG_WRONG_DOTW_FORMAT)
+
+    # parse time
+    time = None
+
+    init_chat_data(context.chat_data)
+
+    job_context = {
+        'chat_id': chat_id,
+        'args': args[args.index('-') + 1:],
+        'chat_jobs': context.chat_data['item_info_repeating_jobs']
+    }
+
+    new_job = context.job_queue.run_repeating(
+        None, days_otw, time, context=job_context
+    )
+
+    context.chat_data['item_info_repeating_dotw_jobs'].append(new_job)
+
+
+def item_info_alarm_command(update, context):
     args = parse_args(context.args)
 
     chat_id = update.message.chat_id
@@ -215,13 +260,16 @@ def main():
     dp.add_handler(CommandHandler('item_info', item_info_command))
     dp.add_handler(CommandHandler('market_search', market_search_command))
     dp.add_handler(
-        CommandHandler('timed_item_info', timed_item_info_command)
+        CommandHandler('item_info_timed', item_info_timed_command)
     )
     dp.add_handler(
-        CommandHandler('repeated_item_info', repeated_item_info_command)
+        CommandHandler('item_info_repeating', item_info_repeating_command)
     )
     dp.add_handler(
-        CommandHandler('alarm_item_info', alarm_item_info_command)
+        CommandHandler('item_info_repeating_dotw', item_info_repeating_days_of_the_week_command)
+    )
+    dp.add_handler(
+        CommandHandler('item_info_alarm', item_info_alarm_command)
     )
     dp.add_handler(CommandHandler('help', help_command))
 

@@ -6,11 +6,16 @@ from time import time
 from telegram_bot.constants import JOBS_PICKLE
 
 
+# TODO change to (chat_data, key)
 def init_chat_data(chat_data):
-    if not chat_data.get('timed_item_info_jobs'):
-        chat_data['timed_item_info_jobs'] = []
+    if not chat_data.get('item_info_timed_jobs'):
+        chat_data['item_info_timed_jobs'] = []
     if not chat_data.get('item_info_alert_jobs'):
         chat_data['item_info_alert_jobs'] = []
+    if not chat_data.get('item_info_repeating_jobs'):
+        chat_data['item_info_repeating_jobs'] = []
+    if not chat_data.get('item_info_repeating_dotw_jobs'):
+        chat_data['item_info_repeating_dotw_jobs'] = []
 
 
 def load_jobs(jq):
