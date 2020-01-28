@@ -1,14 +1,17 @@
 import sys
 import traceback
+from collections import Callable
 from datetime import timezone, timedelta, datetime, time
 from functools import wraps
 
 from emoji import emojize
-from telegram import ChatAction, ParseMode, Chat
+from telegram import ChatAction, ParseMode, Chat, Update
+from telegram.ext import CallbackContext
 
 from market_api.api import get_item_info
 from settings import CHAT_FOR_ERRORS
-from telegram_bot.constants import NO_IMAGE_ARG, DATETIME_FORMAT
+from telegram_bot.constants import NO_IMAGE_ARG, DATETIME_FORMAT, \
+    QUOTATION_MARKS
 from telegram_bot.exceptions.error_messages import ERRMSG_BRACKETS_ERROR, \
     ERRMSG_NOT_ENOUGH_ARGS, ERRMSG_APPID_NOT_INT, WRNMSG_NOT_EXACT, \
     ERRMSG_WRONG_DATE_FORMAT, ERRMSG_NO_FUTURE, ERRMSG_WRONG_TIME_FORMAT
@@ -22,8 +25,8 @@ def parse_args(original_args: list):
     args_iter = iter(original_args)
     try:
         for arg in args_iter:
-            if arg.startswith(('"', "'", '`')):
-                while not arg.endswith(('"', "'", '`')):
+            if arg.startswith((*QUOTATION_MARKS, '«')):
+                while not arg.endswith((*QUOTATION_MARKS, '»')):
                     arg += f' {next(args_iter)}'
             arguments.append(arg.strip(', "\'`'))
     except StopIteration:
@@ -32,7 +35,7 @@ def parse_args(original_args: list):
     return arguments
 
 
-def parse_item_info_args(args):
+def parse_item_info_args(args: list):
     if len(args) < 2:
         raise CommandException(ERRMSG_NOT_ENOUGH_ARGS)
 
@@ -46,7 +49,7 @@ def parse_item_info_args(args):
     return args, no_image
 
 
-def parse_time(time_str):
+def parse_time(time_str: str):
     try:
         return time.fromisoformat(
             time_str
@@ -55,7 +58,7 @@ def parse_time(time_str):
         raise CommandException(ERRMSG_WRONG_TIME_FORMAT)
 
 
-def parse_datetime(datetime_str, datetime_format=DATETIME_FORMAT):
+def parse_datetime(datetime_str: str, datetime_format: str = DATETIME_FORMAT):
     try:
         dt_object = datetime.strptime(
             datetime_str, datetime_format
@@ -80,7 +83,7 @@ def build_menu(buttons, n_cols, header_buttons=None, footer_buttons=None):
 
 def send_typing_action(func):
     @wraps(func)
-    def command_func(update, context, *args, **kwargs):
+    def command_func(update: Update, context: CallbackContext, *args, **kwargs):
         context.bot.send_chat_action(
             chat_id=update.effective_message.chat_id, action=ChatAction.TYPING
         )
@@ -132,7 +135,7 @@ def send_item_info(
     )
 
 
-def handle_job_error(context, chat_id):
+def handle_job_error(context: CallbackContext, chat_id: int):
     if type(context.error) in (CommandException, ApiException):
         context.bot.send_message(
             chat_id=chat_id,

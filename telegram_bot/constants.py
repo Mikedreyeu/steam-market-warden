@@ -1,6 +1,9 @@
-JOBS_PICKLE = 'user_jobs.pickle'
+JOBS_PICKLE = '../pickles/user_jobs.pickle'
 
 NO_IMAGE_ARG = '-no_image'
+
+QUOTATION_MARKS = ('"', "'", '`', '“', '‘', '’')
+
 
 # Stages
 FIRST, SECOND = range(2)
@@ -23,6 +26,8 @@ LT_POSTFIX = 'lt'
 GTE_POSTFIX = 'gte'
 LTE_POSTFIX = 'lte'
 
+ALLOWED_POSTFIXES = (GT_POSTFIX, LT_POSTFIX, GTE_POSTFIX, LTE_POSTFIX)
+
 POSTFIX_TO_SYMBOL = {
     GT_POSTFIX: '&gt;',
     LT_POSTFIX: '&lt;',
@@ -30,7 +35,7 @@ POSTFIX_TO_SYMBOL = {
     LTE_POSTFIX: '&lt;=',
 }
 
-ALLOWED_KEYS_FOR_ALARM = (SELL_PRICE, SELL_LISTINGS, MEDIAN_PRICE, VOLUME)
+ALLOWED_KEYS_FOR_ALERT = (SELL_PRICE, SELL_LISTINGS, MEDIAN_PRICE, VOLUME)
 
 CURRENCY_SYMBOL = '$'  # tmp
 
@@ -47,3 +52,17 @@ TIMEDELTA_KEYS = {
 }
 
 INTERVAL_UNIT_REGEX = fr'(\d+)([{MINUTES}{HOURS}{DAYS}{WEEKS}])'
+
+JOBS = 'jobs'
+
+II_ALERT_JOBS = 'item_info_alert'
+II_REPEATING_JOBS = 'item_info_repeating'
+II_DAILY_JOBS = 'item_info_daily'
+II_TIMED_JOBS = 'item_info_timed'
+
+JOB_TO_CHAT_DATA_KEY = {
+    'check_values_of_an_item_info_job': II_ALERT_JOBS,
+    'item_info_repeating_job': II_REPEATING_JOBS,
+    'item_info_daily_job': II_DAILY_JOBS,
+    'item_info_timed_job': II_TIMED_JOBS
+}

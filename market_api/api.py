@@ -9,6 +9,7 @@ from market_api.constants import (
     MARKET_SEARCH_URL
 )
 from market_api.utils import build_icon_url
+from telegram_bot.exceptions.error_messages import ERRMSG_NOTHING_FOUND
 from telegram_bot.exceptions.exceptions import ApiException
 
 
@@ -99,6 +100,9 @@ def get_item_info(appid: int, market_hash_name: str, currency: int = 1):
     )
 
     if market_search_response['success']:
+        if market_search_response['total_count'] == 0:
+            raise ApiException(ERRMSG_NOTHING_FOUND)
+
         result = market_search_response['results'][0]
 
         item_info.update(
@@ -131,10 +135,6 @@ def get_item_info(appid: int, market_hash_name: str, currency: int = 1):
             }
         )
 
-    if (not price_overview_response['success']
-            and market_search_response['total_count'] == 0):
-        raise ApiException('NOTHING_FOUND')
-
     return item_info
 
 
@@ -147,6 +147,9 @@ def market_search_for_command(
     market_search_response = market_search(query=query)
 
     if market_search_response['success']:
+        if market_search_response['total_count'] == 0:
+            raise ApiException(ERRMSG_NOTHING_FOUND)
+
         result = market_search_response['results'][0]
 
         market_search_dict.update(
@@ -156,5 +159,9 @@ def market_search_for_command(
         market_search_dict['icon_url'] = build_icon_url(
             result['asset_description']['icon_url']
         )
+
+        market_search_dict['appid'] = result['asset_description'].get('appid')
+
+        market_search_dict['app_name'] = result['asset_description'].get('app_name')
 
     return market_search_dict

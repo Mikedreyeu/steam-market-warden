@@ -17,7 +17,9 @@ def format_item_info(item_info):
 
 def format_market_search(market_search):
     return (
-        f'*Name:* {market_search.get("name")}\n'
+        f'*App name:* {market_search.get("app_name")} '
+        f'(appid: {market_search.get("appid")})\n'
+        f'*Item name:* {market_search.get("name")}\n'
         f'*Sell price:* {market_search.get("sell_price_text")}\n'
         f'*Sell listings:* {market_search.get("sell_listings")}'
     )

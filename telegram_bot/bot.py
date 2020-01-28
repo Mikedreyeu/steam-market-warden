@@ -5,24 +5,27 @@ import traceback
 from datetime import timedelta, datetime, timezone
 
 from emoji import emojize
-from telegram import ParseMode
-from telegram.ext import Updater, CommandHandler
+from telegram import ParseMode, Update
+from telegram.ext import Updater, CommandHandler, CallbackContext
 from telegram.ext.jobqueue import Days
 from telegram.utils.helpers import mention_html
 
 from market_api.api import market_search_for_command
 from settings import BOT_TOKEN, CHAT_FOR_ERRORS
-from telegram_bot.constants import NO_IMAGE_ARG, TIMEDELTA_KEYS, \
-    INTERVAL_UNIT_REGEX
-from telegram_bot.exceptions.error_messages import (ERRMSG_NOT_ENOUGH_ARGS,
-                                                    ERRMSG_WRONG_INTERVAL_FORMAT,
-                                                    ERRMSG_WRONG_DOTW_FORMAT)
+from telegram_bot.constants import (
+    NO_IMAGE_ARG, TIMEDELTA_KEYS, INTERVAL_UNIT_REGEX, II_TIMED_JOBS,
+    II_DAILY_JOBS, II_REPEATING_JOBS, II_ALERT_JOBS, JOBS
+)
+from telegram_bot.exceptions.error_messages import (
+    ERRMSG_NOT_ENOUGH_ARGS, ERRMSG_WRONG_INTERVAL_FORMAT,
+    ERRMSG_WRONG_DOTW_FORMAT
+)
 from telegram_bot.exceptions.exceptions import CommandException, ApiException
 from telegram_bot.jobs import item_info_timed_job, \
     check_values_of_an_item_info_job, item_info_repeating_job, \
-    item_info_daily_job, save_jobs_job
+    item_info_daily_job
 from telegram_bot.utils.job_utils import save_jobs, load_jobs, \
-    init_list_chat_data
+    init_jobs_dict_chat_data
 from telegram_bot.utils.message_builder import format_market_search, \
     format_days_of_the_week, format_alerts_conditions
 from telegram_bot.utils.utils import parse_args, send_typing_action, \
@@ -36,12 +39,12 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def start_command(update, context):
+def start_command(update: Update, context: CallbackContext):
     context.bot.send_message(chat_id=update.effective_chat.id, text='Hi!')
 
 
 @send_typing_action
-def market_search_command(update, context):
+def market_search_command(update: Update, context: CallbackContext):
     args = parse_args(context.args)
 
     if len(args) < 1:
@@ -62,12 +65,12 @@ def market_search_command(update, context):
 
 
 @send_typing_action
-def item_info_command(update, context):
+def item_info_command(update: Update, context: CallbackContext):
     args = parse_args(context.args)
     send_item_info(context, update.effective_chat.id, args)
 
 
-# def timed_item_info_command(update, context):
+# def timed_item_info_command(update: Update, context: CallbackContext):
 #     keyboard = [InlineKeyboardButton('run_once', callback_data='1'),
 #                 InlineKeyboardButton('run_repeating', callback_data='2'),
 #                 InlineKeyboardButton('run_daily', callback_data='3')]
@@ -77,7 +80,7 @@ def item_info_command(update, context):
 #     update.message.reply_text('Please choose:', reply_markup=reply_markup)
 
 
-def item_info_timed_command(update, context):
+def item_info_timed_command(update: Update, context: CallbackContext):
     args = parse_args(context.args)
 
     if args[0].isdigit():
@@ -85,20 +88,20 @@ def item_info_timed_command(update, context):
     else:
         when = parse_datetime(f'{args[0]} {args[1]}')
 
-    init_list_chat_data(context.chat_data, 'item_info_timed_jobs')
+    init_jobs_dict_chat_data(context.chat_data)
 
     chat_id = update.message.chat_id
     job_context = {
         'chat_id': chat_id,
         'args': args[args.index('-')+1:],
-        'chat_jobs': context.chat_data['item_info_timed_jobs']
+        'jobs_list': context.chat_data[JOBS][II_TIMED_JOBS]
     }
 
     new_job = context.job_queue.run_once(
         item_info_timed_job, when, job_context
     )
 
-    context.chat_data['item_info_timed_jobs'].append(new_job)
+    context.chat_data[JOBS][II_TIMED_JOBS].append(new_job)
 
     if isinstance(when, int):
         success_part = f'{when} seconds from now'
@@ -118,7 +121,7 @@ def item_info_timed_command(update, context):
     )
 
 
-def item_info_repeating_command(update, context):
+def item_info_repeating_command(update: Update, context: CallbackContext):
     args = parse_args(context.args)
 
     chat_id = update.message.chat_id
@@ -140,19 +143,19 @@ def item_info_repeating_command(update, context):
     else:
         first = datetime.now(tz=timezone(timedelta(hours=3)))
 
-    init_list_chat_data(context.chat_data, 'item_info_repeating_jobs')
+    init_jobs_dict_chat_data(context.chat_data)
 
     job_context = {
         'chat_id': chat_id,
         'args': args[args.index('-')+1:],
-        'chat_jobs': context.chat_data['item_info_repeating_jobs']
+        'jobs_list': context.chat_data[JOBS][II_REPEATING_JOBS]
     }
 
     new_job = context.job_queue.run_repeating(
         item_info_repeating_job, interval, first, job_context
     )
 
-    context.chat_data['item_info_repeating_jobs'].append(new_job)
+    context.chat_data[JOBS][II_REPEATING_JOBS].append(new_job)
 
     success_text = (
         f':articulated_lorry: <b>Repeating item info set</b>\n'
@@ -168,7 +171,7 @@ def item_info_repeating_command(update, context):
     )
 
 
-def item_info_daily_command(update, context):
+def item_info_daily_command(update: Update, context: CallbackContext):
     args = parse_args(context.args)
 
     chat_id = update.message.chat_id
@@ -185,19 +188,19 @@ def item_info_daily_command(update, context):
 
     time_object = parse_time(time_str)
 
-    init_list_chat_data(context.chat_data, 'item_info_daily_jobs')
+    init_jobs_dict_chat_data(context.chat_data)
 
     job_context = {
         'chat_id': chat_id,
         'args': args[args.index('-')+1:],
-        'chat_jobs': context.chat_data['item_info_daily_jobs']
+        'jobs_list': context.chat_data[JOBS][II_DAILY_JOBS]
     }
 
     new_job = context.job_queue.run_daily(
         item_info_daily_job, time_object, days_otw, job_context
     )
 
-    context.chat_data['item_info_daily_jobs'].append(new_job)
+    context.chat_data[JOBS][II_DAILY_JOBS].append(new_job)
 
     success_text = (
         f':truck: <b>Daily item info set</b>\n'
@@ -213,18 +216,18 @@ def item_info_daily_command(update, context):
     )
 
 
-def item_info_alarm_command(update, context):
+def item_info_alert_command(update: Update, context: CallbackContext):
     args = parse_args(context.args)
 
     chat_id = update.message.chat_id
 
-    init_list_chat_data(context.chat_data, 'item_info_alert_jobs')
+    init_jobs_dict_chat_data(context.chat_data)
 
     job_context = {
         'chat_id': chat_id,
         'conditions': args[:args.index('-')],
         'args': args[args.index('-')+1:],
-        'chat_jobs': context.chat_data['item_info_alert_jobs']
+        'jobs_list': context.chat_data[JOBS][II_ALERT_JOBS]
     }
 
     context.job_queue.run_once(
@@ -236,10 +239,10 @@ def item_info_alarm_command(update, context):
         context=job_context
     )
 
-    context.chat_data['item_info_alert_jobs'].append(new_job)
+    context.chat_data[JOBS][II_ALERT_JOBS].append(new_job)
 
     success_text = (
-        f':nail_care: <b>Alarm set</b>\n'
+        f':nail_care: <b>Alert set</b>\n'
         f'<b>Item:</b> {", ".join(args[args.index("-")+1:])}\n'
         f'{format_alerts_conditions(args[:args.index("-")])}'
     )
@@ -251,12 +254,12 @@ def item_info_alarm_command(update, context):
     )
 
 
-def help_command(update, context):
+def help_command(update: Update, context: CallbackContext):
     context.bot.send_message(chat_id=update.effective_chat.id, text='Help!')
     save_jobs(context.job_queue)  # TODO: temporary
 
 
-def error_handler(update, context):
+def error_handler(update: Update, context: CallbackContext):
     logger.warning(
         'Update "%s" caused error "%s"', update, context.error
     )
@@ -280,7 +283,7 @@ def error_handler(update, context):
                 update.effective_user.id, update.effective_user.first_name
             )
             payload += f' with the user {user_mention}'
-            
+
         if update.effective_chat:
             payload += f' within the chat <i>{update.effective_chat.title}</i>'
             if update.effective_chat.username:
@@ -310,7 +313,7 @@ def main():
     # job_queue.run_repeating(save_jobs_job, timedelta(minutes=1))
 
     try:
-        load_jobs(job_queue)
+        load_jobs(dp, job_queue)
     except FileNotFoundError:
         # First run
         pass
@@ -337,7 +340,7 @@ def main():
         CommandHandler('item_info_daily', item_info_daily_command)
     )
     dp.add_handler(
-        CommandHandler('item_info_alarm', item_info_alarm_command)
+        CommandHandler('item_info_alert', item_info_alert_command)
     )
     dp.add_handler(CommandHandler('help', help_command))
 
