@@ -20,7 +20,7 @@ from telegram_bot.exceptions.error_messages import (ERRMSG_NOT_ENOUGH_ARGS,
 from telegram_bot.exceptions.exceptions import CommandException, ApiException
 from telegram_bot.jobs import item_info_timed_job, \
     check_values_of_an_item_info_job, item_info_repeating_job, \
-    item_info_daily_job
+    item_info_daily_job, save_jobs_job
 from telegram_bot.utils.job_utils import save_jobs, load_jobs, \
     init_list_chat_data
 from telegram_bot.utils.message_builder import format_market_search, \
@@ -253,6 +253,7 @@ def item_info_alarm_command(update, context):
 
 def help_command(update, context):
     context.bot.send_message(chat_id=update.effective_chat.id, text='Help!')
+    save_jobs(context.job_queue)  # TODO: temporary
 
 
 def error_handler(update, context):

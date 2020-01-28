@@ -12,12 +12,12 @@ from telegram_bot.exceptions.exceptions import CommandException
 from telegram_bot.utils.job_utils import save_jobs
 from telegram_bot.utils.message_builder import format_item_info
 from telegram_bot.utils.utils import parse_item_info_args, send_item_message, \
-    send_item_info
+    send_item_info, job_error_handler
 
 
+@job_error_handler
 def check_values_of_an_item_info_job(context):
     args, no_image = parse_item_info_args(context.job.context['args'])
-
     item_info_dict = get_item_info(args[0], args[1])
 
     meets_conditions_list = []
@@ -86,6 +86,7 @@ def check_values_of_an_item_info_job(context):
         context.job.context['chat_jobs'].remove(context.job)
 
 
+@job_error_handler
 def item_info_repeating_job(context):
     send_item_info(
         context, context.job.context['chat_id'], context.job.context['args'],
@@ -95,6 +96,7 @@ def item_info_repeating_job(context):
     context.job.context['chat_jobs'].remove(context.job)
 
 
+@job_error_handler
 def item_info_daily_job(context):
     send_item_info(
         context, context.job.context['chat_id'], context.job.context['args'],
@@ -104,6 +106,7 @@ def item_info_daily_job(context):
     context.job.context['chat_jobs'].remove(context.job)
 
 
+@job_error_handler
 def item_info_timed_job(context):
     send_item_info(
         context, context.job.context['chat_id'], context.job.context['args'],
@@ -114,5 +117,6 @@ def item_info_timed_job(context):
     context.job.context['chat_jobs'].remove(context.job)
 
 
+@job_error_handler
 def save_jobs_job(context):
     save_jobs(context.job_queue)

@@ -1,15 +1,18 @@
+import sys
+import traceback
 from datetime import timezone, timedelta, datetime, time
 from functools import wraps
 
 from emoji import emojize
-from telegram import ChatAction, ParseMode
+from telegram import ChatAction, ParseMode, Chat
 
 from market_api.api import get_item_info
+from settings import CHAT_FOR_ERRORS
 from telegram_bot.constants import NO_IMAGE_ARG, DATETIME_FORMAT
 from telegram_bot.exceptions.error_messages import ERRMSG_BRACKETS_ERROR, \
     ERRMSG_NOT_ENOUGH_ARGS, ERRMSG_APPID_NOT_INT, WRNMSG_NOT_EXACT, \
     ERRMSG_WRONG_DATE_FORMAT, ERRMSG_NO_FUTURE, ERRMSG_WRONG_TIME_FORMAT
-from telegram_bot.exceptions.exceptions import CommandException
+from telegram_bot.exceptions.exceptions import CommandException, ApiException
 from telegram_bot.utils.message_builder import format_item_info
 
 
@@ -127,3 +130,44 @@ def send_item_info(
     send_item_message(
         context, chat_id, message_text, no_image, item_info_dict['icon_url']
     )
+
+
+def handle_job_error(context, chat_id):
+    if type(context.error) in (CommandException, ApiException):
+        context.bot.send_message(
+            chat_id=chat_id,
+            text=context.error.message,
+            parse_mode=ParseMode.MARKDOWN
+        )
+    else:
+        context.bot.send_message(
+            chat_id=chat_id,
+            text=emojize(
+                ':thinking_face: Something went wrong...',
+                use_aliases=True
+            )
+        )
+
+        payload = f' within the chat <i>{chat_id}</i>'
+
+        trace = ''.join(traceback.format_tb(sys.exc_info()[2]))
+        text = (f'The error <code>{context.error}</code> '
+                f'happened during the job execution{payload}.\n'
+                f'The full traceback:\n\n'
+                f'<code>{trace}</code>')
+
+        context.bot.send_message(
+            CHAT_FOR_ERRORS, text, parse_mode=ParseMode.HTML
+        )
+
+
+def job_error_handler(func):
+    @wraps(func)
+    def job_func(context, *args, **kwargs):
+        try:
+            return func(context, *args, **kwargs)
+        except Exception as e:
+            context.error = e
+            handle_job_error(context, context.job.context['chat_id'])
+
+    return job_func
