@@ -3,7 +3,7 @@ from collections import defaultdict
 from threading import Event
 from time import time
 
-from telegram.ext import Dispatcher, Job, JobQueue
+from telegram.ext import Dispatcher, Job, JobQueue, CallbackContext
 
 from telegram_bot.constants import JOBS_PICKLE, JOB_TO_CHAT_DATA_KEY, JOBS, \
     II_ALERT_JOBS, II_REPEATING_JOBS, II_DAILY_JOBS, II_TIMED_JOBS
@@ -24,6 +24,12 @@ def init_jobs_dict_chat_data(chat_data: dict):
         for key in (II_ALERT_JOBS, II_REPEATING_JOBS,
                     II_DAILY_JOBS, II_TIMED_JOBS):
             chat_data[JOBS][key] = []
+
+
+def remove_job(context: CallbackContext, chat_id: int, job: Job):
+    job_key = JOB_TO_CHAT_DATA_KEY[job.name]
+    context._dispatcher.chat_data[chat_id][JOBS][job_key].remove(context.job)
+    job.schedule_removal()
 
 
 def load_jobs(dispatcher: Dispatcher, jq: JobQueue):

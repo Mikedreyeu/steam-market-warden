@@ -11,7 +11,7 @@ from telegram_bot.exceptions.error_messages import \
     ERRMSG_ALERT_NOT_VALID_CONDITIONS, ERRMSG_ALERT_NOT_ALLOWED_KEYS, \
     ERRMSG_ALERT_NOT_VALID_POSTFIX
 from telegram_bot.exceptions.exceptions import CommandException
-from telegram_bot.utils.job_utils import save_jobs
+from telegram_bot.utils.job_utils import save_jobs, remove_job
 from telegram_bot.utils.message_builder import format_item_info
 from telegram_bot.utils.utils import parse_item_info_args, send_item_message, \
     send_item_info, job_error_handler
@@ -85,8 +85,7 @@ def check_values_of_an_item_info_job(context: CallbackContext):
             no_image, item_info_dict['icon_url']
         )
 
-        context.job.context['jobs_list'].remove(context.job)
-        context.job.schedule_removal()
+        remove_job(context, chat_id, context.job)
 
 
 @job_error_handler
@@ -107,13 +106,14 @@ def item_info_daily_job(context: CallbackContext):
 
 @job_error_handler
 def item_info_timed_job(context: CallbackContext):
+    chat_id = context.job.context['chat_id']
+
     send_item_info(
-        context, context.job.context['chat_id'], context.job.context['args'],
+        context, chat_id, context.job.context['args'],
         add_to_message=f'\n\n:alarm_clock: _Timed item info request_'
     )
 
-    context.job.context['jobs_list'].remove(context.job)
-    context.job.schedule_removal()
+    remove_job(context, chat_id, context.job)
 
 
 @job_error_handler

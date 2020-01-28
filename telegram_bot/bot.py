@@ -70,16 +70,6 @@ def item_info_command(update: Update, context: CallbackContext):
     send_item_info(context, update.effective_chat.id, args)
 
 
-# def timed_item_info_command(update: Update, context: CallbackContext):
-#     keyboard = [InlineKeyboardButton('run_once', callback_data='1'),
-#                 InlineKeyboardButton('run_repeating', callback_data='2'),
-#                 InlineKeyboardButton('run_daily', callback_data='3')]
-#
-#     reply_markup = InlineKeyboardMarkup(build_menu(keyboard, n_cols=2))
-#
-#     update.message.reply_text('Please choose:', reply_markup=reply_markup)
-
-
 def item_info_timed_command(update: Update, context: CallbackContext):
     args = parse_args(context.args)
 
@@ -88,19 +78,17 @@ def item_info_timed_command(update: Update, context: CallbackContext):
     else:
         when = parse_datetime(f'{args[0]} {args[1]}')
 
-    init_jobs_dict_chat_data(context.chat_data)
-
     chat_id = update.message.chat_id
     job_context = {
         'chat_id': chat_id,
-        'args': args[args.index('-')+1:],
-        'jobs_list': context.chat_data[JOBS][II_TIMED_JOBS]
+        'args': args[args.index('-')+1:]
     }
 
     new_job = context.job_queue.run_once(
         item_info_timed_job, when, job_context
     )
 
+    init_jobs_dict_chat_data(context.chat_data)
     context.chat_data[JOBS][II_TIMED_JOBS].append(new_job)
 
     if isinstance(when, int):
@@ -143,18 +131,16 @@ def item_info_repeating_command(update: Update, context: CallbackContext):
     else:
         first = datetime.now(tz=timezone(timedelta(hours=3)))
 
-    init_jobs_dict_chat_data(context.chat_data)
-
     job_context = {
         'chat_id': chat_id,
-        'args': args[args.index('-')+1:],
-        'jobs_list': context.chat_data[JOBS][II_REPEATING_JOBS]
+        'args': args[args.index('-')+1:]
     }
 
     new_job = context.job_queue.run_repeating(
         item_info_repeating_job, interval, first, job_context
     )
 
+    init_jobs_dict_chat_data(context.chat_data)
     context.chat_data[JOBS][II_REPEATING_JOBS].append(new_job)
 
     success_text = (
@@ -188,18 +174,16 @@ def item_info_daily_command(update: Update, context: CallbackContext):
 
     time_object = parse_time(time_str)
 
-    init_jobs_dict_chat_data(context.chat_data)
-
     job_context = {
         'chat_id': chat_id,
-        'args': args[args.index('-')+1:],
-        'jobs_list': context.chat_data[JOBS][II_DAILY_JOBS]
+        'args': args[args.index('-')+1:]
     }
 
     new_job = context.job_queue.run_daily(
         item_info_daily_job, time_object, days_otw, job_context
     )
 
+    init_jobs_dict_chat_data(context.chat_data)
     context.chat_data[JOBS][II_DAILY_JOBS].append(new_job)
 
     success_text = (
@@ -221,13 +205,10 @@ def item_info_alert_command(update: Update, context: CallbackContext):
 
     chat_id = update.message.chat_id
 
-    init_jobs_dict_chat_data(context.chat_data)
-
     job_context = {
         'chat_id': chat_id,
         'conditions': args[:args.index('-')],
-        'args': args[args.index('-')+1:],
-        'jobs_list': context.chat_data[JOBS][II_ALERT_JOBS]
+        'args': args[args.index('-')+1:]
     }
 
     context.job_queue.run_once(
@@ -239,6 +220,7 @@ def item_info_alert_command(update: Update, context: CallbackContext):
         context=job_context
     )
 
+    init_jobs_dict_chat_data(context.chat_data)
     context.chat_data[JOBS][II_ALERT_JOBS].append(new_job)
 
     success_text = (
@@ -252,6 +234,10 @@ def item_info_alert_command(update: Update, context: CallbackContext):
         text=emojize(success_text, use_aliases=True),
         parse_mode=ParseMode.HTML
     )
+
+
+def manage_item_info_jobs_command(update: Update, context: CallbackContext):
+    pass
 
 
 def help_command(update: Update, context: CallbackContext):
@@ -330,17 +316,13 @@ def main():
     dp.add_handler(CommandHandler('start', start_command))
     dp.add_handler(CommandHandler('item_info', item_info_command))
     dp.add_handler(CommandHandler('market_search', market_search_command))
+    dp.add_handler(CommandHandler('item_info_timed', item_info_timed_command))
+    dp.add_handler(CommandHandler('item_info_daily', item_info_daily_command))
+    dp.add_handler(CommandHandler('item_info_alert', item_info_alert_command))
     dp.add_handler(
-        CommandHandler('item_info_timed', item_info_timed_command)
-    )
+        CommandHandler('item_info_repeating', item_info_repeating_command))
     dp.add_handler(
-        CommandHandler('item_info_repeating', item_info_repeating_command)
-    )
-    dp.add_handler(
-        CommandHandler('item_info_daily', item_info_daily_command)
-    )
-    dp.add_handler(
-        CommandHandler('item_info_alert', item_info_alert_command)
+        CommandHandler('manage_item_info_jobs', manage_item_info_jobs_command)
     )
     dp.add_handler(CommandHandler('help', help_command))
 
