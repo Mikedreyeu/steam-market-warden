@@ -14,20 +14,19 @@ from telegram_bot.exceptions.exceptions import CommandException
 from telegram_bot.utils.job_utils import save_jobs, remove_job
 from telegram_bot.utils.message_builder import format_item_info
 from telegram_bot.utils.utils import parse_item_info_args, send_item_message, \
-    send_item_info, job_error_handler
+    send_item_info, job_error_handler, parse_alert_conditions
 
 
 @job_error_handler
 def check_values_of_an_item_info_job(context: CallbackContext):
-    args, no_image = parse_item_info_args(context.job.context['args'])
+    args, no_image = parse_item_info_args(context.job.context['item_info_args'])
     item_info_dict = get_item_info(args[0], args[1])
 
     meets_conditions_list = []
 
-    for condition in context.job.context['conditions']:
+    for condition in parse_alert_conditions(context.job.context['conditions']):
         try:
-            cond_key, cond_value = condition.lower().split(KV_SEPARATOR)
-            key_name, postfix = cond_key.split(COND_SEPARATOR)
+            key_name, postfix, cond_value = condition
 
             if key_name in (SELL_PRICE, MEDIAN_PRICE):
                 currency_symbol = CURRENCY_SYMBOL
@@ -91,7 +90,7 @@ def check_values_of_an_item_info_job(context: CallbackContext):
 @job_error_handler
 def item_info_repeating_job(context: CallbackContext):
     send_item_info(
-        context, context.job.context['chat_id'], context.job.context['args'],
+        context, context.job.context['chat_id'], context.job.context['item_info_args'],
         add_to_message=f'\n\n:alarm_clock: _Repeating item info request_'
     )
 
@@ -99,7 +98,7 @@ def item_info_repeating_job(context: CallbackContext):
 @job_error_handler
 def item_info_daily_job(context: CallbackContext):
     send_item_info(
-        context, context.job.context['chat_id'], context.job.context['args'],
+        context, context.job.context['chat_id'], context.job.context['item_info_args'],
         add_to_message=f'\n\n:alarm_clock: _Daily item info request_'
     )
 
@@ -109,7 +108,7 @@ def item_info_timed_job(context: CallbackContext):
     chat_id = context.job.context['chat_id']
 
     send_item_info(
-        context, chat_id, context.job.context['args'],
+        context, chat_id, context.job.context['item_info_args'],
         add_to_message=f'\n\n:alarm_clock: _Timed item info request_'
     )
 

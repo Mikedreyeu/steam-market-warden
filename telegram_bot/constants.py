@@ -6,9 +6,9 @@ QUOTATION_MARKS = ('"', "'", '`', '“', '‘', '’')
 
 
 # Stages
-FIRST, SECOND = range(2)
+CHOOSE_JOB_TYPE, CHOOSE_JOB = range(2)
 # Callback data
-ONE, TWO, THREE, FOUR = range(4)
+ALERT, TIMED, REPEATING, DAILY, ALL, CANCEL = (str(item) for item in range(6))
 
 DATETIME_FORMAT = '%H:%M %d.%m.%Y'
 
@@ -54,15 +54,23 @@ TIMEDELTA_KEYS = {
 INTERVAL_UNIT_REGEX = fr'(\d+)([{MINUTES}{HOURS}{DAYS}{WEEKS}])'
 
 JOBS = 'jobs'
+SELECTED_JOB = 'selected_job'
 
 II_ALERT_JOBS = 'item_info_alert'
+II_TIMED_JOBS = 'item_info_timed'
 II_REPEATING_JOBS = 'item_info_repeating'
 II_DAILY_JOBS = 'item_info_daily'
-II_TIMED_JOBS = 'item_info_timed'
 
 JOB_TO_CHAT_DATA_KEY = {
     'check_values_of_an_item_info_job': II_ALERT_JOBS,
+    'item_info_timed_job': II_TIMED_JOBS,
     'item_info_repeating_job': II_REPEATING_JOBS,
-    'item_info_daily_job': II_DAILY_JOBS,
-    'item_info_timed_job': II_TIMED_JOBS
+    'item_info_daily_job': II_DAILY_JOBS
+}
+
+CALLBACK_TO_CHAT_DATA_KEY = {
+    ALERT: II_ALERT_JOBS,
+    TIMED: II_TIMED_JOBS,
+    REPEATING: II_REPEATING_JOBS,
+    DAILY: II_DAILY_JOBS
 }

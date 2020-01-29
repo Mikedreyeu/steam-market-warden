@@ -3,6 +3,7 @@ from telegram.ext.jobqueue import Days
 from telegram_bot.constants import KV_SEPARATOR, COND_SEPARATOR, SELL_PRICE, \
     MEDIAN_PRICE, CURRENCY_SYMBOL, GT_POSTFIX, LT_POSTFIX, GTE_POSTFIX, \
     LTE_POSTFIX, POSTFIX_TO_SYMBOL
+from telegram_bot.utils.utils import parse_alert_conditions
 
 
 def format_item_info(item_info):
@@ -29,7 +30,7 @@ def format_days_of_the_week(days_list):
     if days_list == Days.EVERY_DAY:
         return 'Every day'
     result = ''
-
+    # TODO: change to dict
     for day in days_list:
         if day == 0:
             result += 'Monday'
@@ -54,9 +55,8 @@ def format_days_of_the_week(days_list):
 def format_alerts_conditions(conditions):
     result_text = '<b>Conditions:</b>'
 
-    for condition in conditions:
-        cond_key, cond_value = condition.lower().split(KV_SEPARATOR)
-        key_name, postfix = cond_key.split(COND_SEPARATOR)
+    for condition in parse_alert_conditions(conditions):
+        key_name, postfix, cond_value = condition
 
         if key_name not in (SELL_PRICE, MEDIAN_PRICE):
             currency_symbol = ''
@@ -73,3 +73,10 @@ def format_alerts_conditions(conditions):
         result_text = f'{result_text}\n{condition_text}'
 
     return result_text
+
+
+def format_when_timed_job(when):
+    if isinstance(when, int):
+        return f'{when} seconds from now'
+    else:
+        return when

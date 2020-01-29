@@ -11,7 +11,7 @@ from telegram.ext import CallbackContext
 from market_api.api import get_item_info
 from settings import CHAT_FOR_ERRORS
 from telegram_bot.constants import NO_IMAGE_ARG, DATETIME_FORMAT, \
-    QUOTATION_MARKS
+    QUOTATION_MARKS, KV_SEPARATOR, COND_SEPARATOR
 from telegram_bot.exceptions.error_messages import ERRMSG_BRACKETS_ERROR, \
     ERRMSG_NOT_ENOUGH_ARGS, ERRMSG_APPID_NOT_INT, WRNMSG_NOT_EXACT, \
     ERRMSG_WRONG_DATE_FORMAT, ERRMSG_NO_FUTURE, ERRMSG_WRONG_TIME_FORMAT
@@ -174,3 +174,15 @@ def job_error_handler(func):
             handle_job_error(context, context.job.context['chat_id'])
 
     return job_func
+
+
+def parse_alert_conditions(conditions):
+    resulting_conditions = []
+
+    for condition in conditions:
+        cond_key, cond_value = condition.lower().split(KV_SEPARATOR)
+        key_name, postfix = cond_key.split(COND_SEPARATOR)
+
+        resulting_conditions.append((key_name, postfix, cond_value))
+
+    return resulting_conditions
