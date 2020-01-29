@@ -2,8 +2,7 @@ from telegram.ext.jobqueue import Days
 
 from telegram_bot.constants import KV_SEPARATOR, COND_SEPARATOR, SELL_PRICE, \
     MEDIAN_PRICE, CURRENCY_SYMBOL, GT_POSTFIX, LT_POSTFIX, GTE_POSTFIX, \
-    LTE_POSTFIX, POSTFIX_TO_SYMBOL
-from telegram_bot.utils.utils import parse_alert_conditions
+    LTE_POSTFIX, POSTFIX_TO_SYMBOL, DOTW_DICT
 
 
 def format_item_info(item_info):
@@ -11,7 +10,8 @@ def format_item_info(item_info):
         f'*Name:* {item_info.get("name")}\n'
         f'*Sell price:* ${item_info.get("sell_price")}\n'
         f'*Sell listings:* {item_info.get("sell_listings")}\n'
-        f'*Median price:* ${item_info.get("median_price")}\n'
+        f'*Median price:* {"$" if item_info.get("median_price") else ""}'
+        f'{item_info.get("median_price")}\n'
         f'*Volume:* {item_info.get("volume")}'
     )
 
@@ -26,33 +26,21 @@ def format_market_search(market_search):
     )
 
 
-def format_days_of_the_week(days_list):
+def format_days_of_the_week(days_list: list, short_form: bool = False):
     if days_list == Days.EVERY_DAY:
         return 'Every day'
-    result = ''
-    # TODO: change to dict
-    for day in days_list:
-        if day == 0:
-            result += 'Monday'
-        elif day == 1:
-            result += 'Tuesday'
-        elif day == 2:
-            result += 'Wednesday'
-        elif day == 3:
-            result += 'Thursday'
-        elif day == 4:
-            result += 'Friday'
-        elif day == 5:
-            result += 'Saturday'
-        elif day == 6:
-            result += 'Sunday'
 
-        result += ', '
+    if not short_form:
+        days_list = [DOTW_DICT[day][0] for day in days_list]
+    else:
+        days_list = [DOTW_DICT[day][1] for day in days_list]
 
-    return result[:-2]
+    return ', '.join(days_list)
 
 
 def format_alerts_conditions(conditions):
+    from telegram_bot.utils.utils import parse_alert_conditions
+
     result_text = '<b>Conditions:</b>'
 
     for condition in parse_alert_conditions(conditions):

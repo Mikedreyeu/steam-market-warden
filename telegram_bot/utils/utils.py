@@ -1,11 +1,10 @@
 import sys
 import traceback
-from collections import Callable
 from datetime import timezone, timedelta, datetime, time
 from functools import wraps
 
 from emoji import emojize
-from telegram import ChatAction, ParseMode, Chat, Update
+from telegram import ChatAction, ParseMode, Update
 from telegram.ext import CallbackContext
 
 from market_api.api import get_item_info

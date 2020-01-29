@@ -129,11 +129,17 @@ def get_item_info(appid: int, market_hash_name: str, currency: int = 1):
     if price_overview_response['success']:
         item_info.update(
             {
-                key: int(price_overview_response.get(key)) if key == 'volume'
-                else float(price_overview_response.get(key)[1:])
+                key: price_overview_response.get(key)
                 for key in PRICE_OVERVIEW_KEYS_TO_EXTRACT
             }
         )
+
+        for key in PRICE_OVERVIEW_KEYS_TO_EXTRACT:
+            if item_info[key]:
+                if key == 'volume':
+                    item_info[key] = int(item_info[key])
+                else:
+                    item_info[key] = float(item_info[key][1:])
 
     return item_info
 

@@ -13,10 +13,10 @@ from telegram_bot.commands import start_command, item_info_command, \
     market_search_command, item_info_timed_command, item_info_daily_command, \
     item_info_alert_command, item_info_repeating_command, help_command, \
     test_command
-from telegram_bot.constants import (CHOOSE_JOB_TYPE, DAILY, TIMED, ALERT,
+from telegram_bot.constants import (CHOOSE_JOB_TYPE, DAILY, TIMED, ALERT, ALL,
                                     REPEATING, CANCEL, CHOOSE_JOB)
 from telegram_bot.conversations import manage_item_info_jobs_command, \
-    end_conversation, choose_job_conv
+    end_conv, choose_job_type_conv
 from telegram_bot.exceptions.exceptions import CommandException, ApiException
 from telegram_bot.utils.job_utils import save_jobs, load_jobs
 
@@ -95,13 +95,20 @@ def main():
         ],
         states={
             CHOOSE_JOB_TYPE: [
-                CallbackQueryHandler(choose_job_conv, pattern=f'^{ALERT}$'),
-                CallbackQueryHandler(choose_job_conv, pattern=f'^{TIMED}$'),
-                CallbackQueryHandler(choose_job_conv, pattern=f'^{REPEATING}$'),
-                CallbackQueryHandler(choose_job_conv, pattern=f'^{DAILY}$'),
-                CallbackQueryHandler(end_conversation, pattern=f'^{CANCEL}$'),
+                CallbackQueryHandler(choose_job_type_conv, pattern=f'^{ALERT}$'),
+                CallbackQueryHandler(choose_job_type_conv, pattern=f'^{TIMED}$'),
+                CallbackQueryHandler(choose_job_type_conv, pattern=f'^{REPEATING}$'),
+                CallbackQueryHandler(choose_job_type_conv, pattern=f'^{DAILY}$'),
+                CallbackQueryHandler(choose_job_type_conv, pattern=f'^{ALL}$'),
+                CallbackQueryHandler(end_conv, pattern=f'^{CANCEL}$'),
             ],
-            CHOOSE_JOB: []
+            CHOOSE_JOB: [
+                CallbackQueryHandler(None, pattern=f'^{MANAGE_JOB}$'),
+                CallbackQueryHandler(None, pattern=f'^{BACK}$'),
+            ],
+            MANAGE_JOB_STATE: [
+
+            ]
         },
         fallbacks=[
             CommandHandler(

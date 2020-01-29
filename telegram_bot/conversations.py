@@ -11,10 +11,10 @@ from telegram_bot.constants import (CHOOSE_JOB_TYPE, DAILY, TIMED, ALERT,
                                     II_ALERT_JOBS, II_TIMED_JOBS,
                                     II_REPEATING_JOBS, II_DAILY_JOBS,
                                     CHOOSE_JOB, JOB_TO_CHAT_DATA_KEY,
-                                    SELECTED_JOB, KV_SEPARATOR, COND_SEPARATOR)
+                                    SELECTED_JOB, CHAT_DATA_KEY_TO_TYPE)
 from telegram_bot.exceptions.exceptions import CommandException
+from telegram_bot.utils.message_builder import format_when_timed_job, format_days_of_the_week
 from telegram_bot.utils.utils import build_menu, parse_alert_conditions
-from telegram_bot.utils.message_builder import format_when_timed_job
 
 
 def manage_item_info_jobs_command(update: Update, context: CallbackContext):
@@ -23,7 +23,7 @@ def manage_item_info_jobs_command(update: Update, context: CallbackContext):
     except KeyError:
         jobs_dict = defaultdict(list)
 
-    alert_count = len(jobs_dict[II_REPEATING_JOBS])
+    alert_count = len(jobs_dict[II_ALERT_JOBS])
     timed_count = len(jobs_dict[II_TIMED_JOBS])
     repeating_count = len(jobs_dict[II_REPEATING_JOBS])
     daily_count = len(jobs_dict[II_DAILY_JOBS])
@@ -64,7 +64,7 @@ def manage_item_info_jobs_command(update: Update, context: CallbackContext):
                 f' :articulated_lorry::truck:',
                 use_aliases=True
             ),
-            callback_data=DAILY
+            callback_data=ALL
         ),
         InlineKeyboardButton('Cancel', callback_data=CANCEL),
     ]
@@ -76,7 +76,7 @@ def manage_item_info_jobs_command(update: Update, context: CallbackContext):
     return CHOOSE_JOB_TYPE
 
 
-def choose_job_conv(update: Update, context: CallbackContext):
+def choose_job_type_conv(update: Update, context: CallbackContext):
     match = context.match.group()
 
     try:
@@ -123,10 +123,12 @@ def choose_job_conv(update: Update, context: CallbackContext):
             button_text = f'[{", ".join(conditions_keys)}] {button_text}'
         elif job_type == II_REPEATING_JOBS:
             button_text = (f'[Every {job.context["interval"]}, '
-                           f'start:{job.context["first"]}] {button_text}')
+                           f'start: {job.context["first"]}] {button_text}')
         elif job_type == II_DAILY_JOBS:
-            button_text = (f'[{job.context["interval"]}, '
-                           f'Time: {job.context["time"]}] {button_text}')
+            button_text = (
+                f'[{format_days_of_the_week(job.context["days_otw"])}, '
+                f'Time: {job.context["time"]}] {button_text}'
+            )
 
         context.user_data[SELECTED_JOB] = job
 
@@ -140,14 +142,14 @@ def choose_job_conv(update: Update, context: CallbackContext):
     context.bot.edit_message_text(
         chat_id=query.message.chat_id,
         message_id=query.message.message_id,
-        text='Choose a job:',
+        text=f'Choose a {CHAT_DATA_KEY_TO_TYPE[match]} job:',
         reply_markup=reply_markup
     )
 
     return CHOOSE_JOB
 
 
-def end_conversation(update: Update, context: CallbackContext):
+def end_conv(update: Update, context: CallbackContext):
     query = update.callback_query
     context.bot.edit_message_text(
         chat_id=query.message.chat_id,

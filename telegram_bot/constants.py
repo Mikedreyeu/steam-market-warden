@@ -61,6 +61,14 @@ II_TIMED_JOBS = 'item_info_timed'
 II_REPEATING_JOBS = 'item_info_repeating'
 II_DAILY_JOBS = 'item_info_daily'
 
+CHAT_DATA_KEY_TO_TYPE = {
+    ALERT: 'alert',
+    TIMED: 'timed',
+    REPEATING: 'repeating',
+    DAILY: 'daily',
+    ALL: ''
+}
+
 JOB_TO_CHAT_DATA_KEY = {
     'check_values_of_an_item_info_job': II_ALERT_JOBS,
     'item_info_timed_job': II_TIMED_JOBS,
@@ -73,4 +81,14 @@ CALLBACK_TO_CHAT_DATA_KEY = {
     TIMED: II_TIMED_JOBS,
     REPEATING: II_REPEATING_JOBS,
     DAILY: II_DAILY_JOBS
+}
+
+DOTW_DICT = {
+    0: ('Monday', 'Mon'),
+    1: ('Tuesday', 'Tue'),
+    2: ('Wednesday', 'Wed'),
+    3: ('Thursday', 'Thu'),
+    4: ('Friday', 'Fri'),
+    5: ('Saturday', 'Sat'),
+    6: ('Sunday', 'Sun')
 }
