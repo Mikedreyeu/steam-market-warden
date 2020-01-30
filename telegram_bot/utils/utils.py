@@ -1,3 +1,4 @@
+import math
 import sys
 import traceback
 from datetime import timezone, timedelta, datetime, time
@@ -175,7 +176,7 @@ def job_error_handler(func):
     return job_func
 
 
-def parse_alert_conditions(conditions):
+def parse_alert_conditions(conditions: list):
     resulting_conditions = []
 
     for condition in conditions:
@@ -185,3 +186,13 @@ def parse_alert_conditions(conditions):
         resulting_conditions.append((key_name, postfix, cond_value))
 
     return resulting_conditions
+
+
+def get_paginated_list(some_list: list, page_size: int):
+    paginated_list = []
+
+    for index in range(math.ceil(len(some_list)/page_size)):
+        start_index = index*page_size
+        paginated_list.append(some_list[start_index:start_index+page_size])
+
+    return paginated_list

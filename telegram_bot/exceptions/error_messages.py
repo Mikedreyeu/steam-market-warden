@@ -1,6 +1,6 @@
 # commands
 ERRMSG_APPID_NOT_INT = '`appid` must be a positive integer.'
-ERRMSG_BRACKETS_ERROR = 'You messed up your \'\`"brackets"\`\'.'
+ERRMSG_BRACKETS_ERROR = 'You messed up your \'\`"quotation marks"\`\'.'
 ERRMSG_NOT_ENOUGH_ARGS = 'Not enough arguments.'
 ERRMSG_NO_FUTURE = "Time is the indefinite continued progress of existence and events that occur in an apparently irreversible succession from the past, through the present, into the future."
 ERRMSG_WRONG_DATE_FORMAT = 'Wrong datetime format. Please write your date with time in format _hh:mm dd.mm.yyyy_'

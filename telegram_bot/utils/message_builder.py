@@ -1,8 +1,10 @@
-from telegram.ext.jobqueue import Days
+from typing import Union
 
-from telegram_bot.constants import KV_SEPARATOR, COND_SEPARATOR, SELL_PRICE, \
-    MEDIAN_PRICE, CURRENCY_SYMBOL, GT_POSTFIX, LT_POSTFIX, GTE_POSTFIX, \
-    LTE_POSTFIX, POSTFIX_TO_SYMBOL, DOTW_DICT
+from telegram.ext.jobqueue import Days, Job
+
+from telegram_bot.constants import SELL_PRICE, MEDIAN_PRICE, CURRENCY_SYMBOL, \
+    POSTFIX_TO_SYMBOL, DOTW_DICT, JOB_TO_CHAT_DATA_KEY, II_TIMED_JOBS, \
+    II_REPEATING_JOBS, II_DAILY_JOBS, II_ALERT_JOBS
 
 
 def format_item_info(item_info):
@@ -68,3 +70,41 @@ def format_when_timed_job(when):
         return f'{when} seconds from now'
     else:
         return when
+
+
+def format_job(job: Job, with_header: bool = True):
+
+    job_item = ', '.join(job.context['item_info_args'])
+
+    if JOB_TO_CHAT_DATA_KEY[job.name] == II_TIMED_JOBS:
+        header = ('<b>Timed item info</b> :steam_locomotive:\n'
+                  if with_header else '')
+        return (
+            f'{header}'
+            f'<b>Item:</b> {job_item}\n'
+            f'<b>Time:</b> {format_when_timed_job(job.context["when"])}'
+        )
+    elif JOB_TO_CHAT_DATA_KEY[job.name] == II_REPEATING_JOBS:
+        header = ('<b>Repeating item info</b> :articulated_lorry:\n'
+                  if with_header else '')
+        return (
+            f'{header}'
+            f'<b>Item:</b> {job_item}\n'
+            f'Every {job.context["interval"]}\n'
+            f'Starting at {job.context["first"]}'
+        )
+    elif JOB_TO_CHAT_DATA_KEY[job.name] == II_DAILY_JOBS:
+        header = '<b>Daily item info</b> :truck:\n' if with_header else ''
+        return (
+            f'{header}'
+            f'<b>Item:</b> {job_item}\n'
+            f'<b>Days:</b> {format_days_of_the_week(job.context["days_otw"])}'
+            f'\n<b>Time:</b> {job.context["time"]}'
+        )
+    elif JOB_TO_CHAT_DATA_KEY[job.name] == II_ALERT_JOBS:
+        header = '<b>Alert</b> :nail_care:\n' if with_header else ''
+        return (
+            f'{header}'
+            f'<b>Item:</b> {job_item}\n'
+            f'{format_alerts_conditions(job.context["conditions"])}'
+        )

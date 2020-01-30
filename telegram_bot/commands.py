@@ -20,7 +20,7 @@ from telegram_bot.jobs import item_info_timed_job, \
     item_info_daily_job
 from telegram_bot.utils.job_utils import save_jobs, init_jobs_dict_chat_data
 from telegram_bot.utils.message_builder import format_market_search, \
-    format_days_of_the_week, format_alerts_conditions, format_when_timed_job
+    format_days_of_the_week, format_alerts_conditions, format_job
 from telegram_bot.utils.utils import parse_args, send_typing_action, \
     send_item_message, send_item_info, parse_datetime, parse_time
 
@@ -80,8 +80,7 @@ def item_info_timed_command(update: Update, context: CallbackContext):
 
     success_text = (
         f':steam_locomotive: <b>Timed item info set</b>\n'
-        f'<b>Item:</b> {", ".join(args[args.index("-")+1:])}\n'
-        f'<b>Time:</b> {format_when_timed_job(when)}'
+        f'{format_job(new_job, with_header=False)}'
     )
 
     update.message.reply_text(
@@ -128,9 +127,7 @@ def item_info_repeating_command(update: Update, context: CallbackContext):
 
     success_text = (
         f':articulated_lorry: <b>Repeating item info set</b>\n'
-        f'<b>Item:</b> {", ".join(args[args.index("-")+1:])}\n'
-        f'Every {interval}\n'
-        f'Starting at {first}'
+        f'{format_job(new_job, with_header=False)}'
     )
 
     update.message.reply_text(
@@ -172,9 +169,7 @@ def item_info_daily_command(update: Update, context: CallbackContext):
 
     success_text = (
         f':truck: <b>Daily item info set</b>\n'
-        f'<b>Item:</b> {", ".join(args[args.index("-")+1:])}\n'
-        f'<b>Days:</b> {format_days_of_the_week(days_otw)}\n'
-        f'<b>Time:</b> {time_object}'
+        f'{format_job(new_job, with_header=False)}'
     )
 
     update.message.reply_text(
@@ -208,8 +203,7 @@ def item_info_alert_command(update: Update, context: CallbackContext):
 
     success_text = (
         f':nail_care: <b>Alert set</b>\n'
-        f'<b>Item:</b> {", ".join(args[args.index("-")+1:])}\n'
-        f'{format_alerts_conditions(args[:args.index("-")])}'
+        f'{format_job(new_job, with_header=False)}'
     )
 
     update.message.reply_text(
