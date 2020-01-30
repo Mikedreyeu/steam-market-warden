@@ -194,7 +194,7 @@ def item_info_alert_command(update: Update, context: CallbackContext):
     )
 
     new_job = context.job_queue.run_repeating(
-        check_values_of_an_item_info_job, timedelta(minutes=20),
+        check_values_of_an_item_info_job, timedelta(hours=1),
         context=job_context
     )
 

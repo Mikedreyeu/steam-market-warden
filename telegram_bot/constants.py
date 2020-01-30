@@ -9,8 +9,8 @@ QUOTATION_MARKS = ('"', "'", '`', '“', '‘', '’')
 ST_CHOOSE_JOB_TYPE, ST_CHOOSE_JOB, ST_MANAGE_JOB = range(3)
 
 # Callback data
-(CB_ALERT, CB_TIMED, CB_REPEATING, CB_DAILY, CB_ALL, CB_CANCEL, CB_MANAGE_JOB,
- CB_BACK) = (str(item) for item in range(8))
+(CB_ALL, CB_CANCEL, CB_MANAGE_JOB,
+ CB_BACK, CB_EDIT_JOB, CB_DELETE_JOB) = (str(item) for item in range(6))
 
 DATETIME_FORMAT = '%H:%M %d.%m.%Y'
 
@@ -64,7 +64,7 @@ II_REPEATING_JOBS = 'item_info_repeating'
 II_DAILY_JOBS = 'item_info_daily'
 
 CHOOSE_JOB_TYPE_REGEX = (
-    f'^(?P<job_type>{"|".join([CB_ALERT, CB_TIMED, CB_REPEATING, CB_DAILY, CB_ALL])})'
+    f'^(?P<job_type>{"|".join([II_ALERT_JOBS, II_TIMED_JOBS, II_REPEATING_JOBS, II_DAILY_JOBS, CB_ALL])})'
     f'-(?P<page_number>\\d+)$'
 )
 
@@ -75,10 +75,10 @@ MANAGE_JOB_REGEX = (
 )
 
 CALLBACK_TO_TYPE = {
-    CB_ALERT: 'alert',
-    CB_TIMED: 'timed',
-    CB_REPEATING: 'repeating',
-    CB_DAILY: 'daily',
+    II_ALERT_JOBS: 'alert',
+    II_TIMED_JOBS: 'timed',
+    II_REPEATING_JOBS: 'repeating',
+    II_DAILY_JOBS: 'daily',
     CB_ALL: ''
 }
 
@@ -87,13 +87,6 @@ JOB_TO_CHAT_DATA_KEY = {
     'item_info_timed_job': II_TIMED_JOBS,
     'item_info_repeating_job': II_REPEATING_JOBS,
     'item_info_daily_job': II_DAILY_JOBS
-}
-
-CALLBACK_TO_CHAT_DATA_KEY = {
-    CB_ALERT: II_ALERT_JOBS,
-    CB_TIMED: II_TIMED_JOBS,
-    CB_REPEATING: II_REPEATING_JOBS,
-    CB_DAILY: II_DAILY_JOBS
 }
 
 DOTW_DICT = {

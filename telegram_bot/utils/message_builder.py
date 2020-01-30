@@ -72,21 +72,31 @@ def format_when_timed_job(when):
         return when
 
 
-def format_job(job: Job, with_header: bool = True):
+def _place_emoji(header_text: str, emoji: str, emoji_in_front: bool):
+    if emoji_in_front:
+        return f'{emoji} {header_text}'
+    else:
+        return f'{header_text} {emoji}'
 
+
+def format_job(job: Job, with_header: bool = True, emoji_in_front: bool = False):
     job_item = ', '.join(job.context['item_info_args'])
 
     if JOB_TO_CHAT_DATA_KEY[job.name] == II_TIMED_JOBS:
-        header = ('<b>Timed item info</b> :steam_locomotive:\n'
-                  if with_header else '')
+        header_text = _place_emoji(
+            '<b>Timed item info</b>', ':steam_locomotive:', emoji_in_front
+        )
+        header = (f'{header_text}\n' if with_header else '')
         return (
             f'{header}'
             f'<b>Item:</b> {job_item}\n'
             f'<b>Time:</b> {format_when_timed_job(job.context["when"])}'
         )
     elif JOB_TO_CHAT_DATA_KEY[job.name] == II_REPEATING_JOBS:
-        header = ('<b>Repeating item info</b> :articulated_lorry:\n'
-                  if with_header else '')
+        header_text = _place_emoji(
+            '<b>Repeating item info</b>', ':articulated_lorry:', emoji_in_front
+        )
+        header = (f'{header_text}\n' if with_header else '')
         return (
             f'{header}'
             f'<b>Item:</b> {job_item}\n'
@@ -94,7 +104,10 @@ def format_job(job: Job, with_header: bool = True):
             f'Starting at {job.context["first"]}'
         )
     elif JOB_TO_CHAT_DATA_KEY[job.name] == II_DAILY_JOBS:
-        header = '<b>Daily item info</b> :truck:\n' if with_header else ''
+        header_text = _place_emoji(
+            '<b>Daily item info</b>', ':truck:', emoji_in_front
+        )
+        header = (f'{header_text}\n' if with_header else '')
         return (
             f'{header}'
             f'<b>Item:</b> {job_item}\n'
@@ -102,7 +115,10 @@ def format_job(job: Job, with_header: bool = True):
             f'\n<b>Time:</b> {job.context["time"]}'
         )
     elif JOB_TO_CHAT_DATA_KEY[job.name] == II_ALERT_JOBS:
-        header = '<b>Alert</b> :nail_care:\n' if with_header else ''
+        header_text = _place_emoji(
+            '<b>Alert item info</b>', ':nail_care:', emoji_in_front
+        )
+        header = (f'{header_text}\n' if with_header else '')
         return (
             f'{header}'
             f'<b>Item:</b> {job_item}\n'

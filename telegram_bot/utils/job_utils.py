@@ -28,7 +28,7 @@ def init_jobs_dict_chat_data(chat_data: dict):
 
 def remove_job(context: CallbackContext, chat_id: int, job: Job):
     job_key = JOB_TO_CHAT_DATA_KEY[job.name]
-    context._dispatcher.chat_data[chat_id][JOBS][job_key].remove(context.job)
+    context._dispatcher.chat_data[chat_id][JOBS][job_key].remove(job)
     job.schedule_removal()
 
 
