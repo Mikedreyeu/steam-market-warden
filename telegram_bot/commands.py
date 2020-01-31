@@ -10,7 +10,7 @@ from market_api.api import market_search_for_command
 from telegram_bot.constants import (NO_IMAGE_ARG, TIMEDELTA_KEYS,
                                     INTERVAL_UNIT_REGEX, II_TIMED_JOBS,
                                     II_DAILY_JOBS, II_REPEATING_JOBS,
-                                    II_ALERT_JOBS, JOBS)
+                                    II_ALERT_JOBS, JOBS, help_command_text)
 from telegram_bot.exceptions.error_messages import (ERRMSG_NOT_ENOUGH_ARGS,
                                                     ERRMSG_WRONG_INTERVAL_FORMAT,
                                                     ERRMSG_WRONG_DOTW_FORMAT)
@@ -26,7 +26,9 @@ from telegram_bot.utils.utils import parse_args, send_typing_action, \
 
 
 def start_command(update: Update, context: CallbackContext):
-    update.message.reply_text(text='Hi!')
+    update.message.reply_text(
+        text=help_command_text, parse_mode=ParseMode.HTML
+    )
 
 
 @send_typing_action
@@ -213,9 +215,6 @@ def item_info_alert_command(update: Update, context: CallbackContext):
 
 
 def help_command(update: Update, context: CallbackContext):
-    update.message.reply_text('Help!')
-    save_jobs(context.job_queue)  # TODO: temporary
-
-
-def test_command(update: Update, context: CallbackContext):
-    pass
+    update.message.reply_text(
+        text=help_command_text, parse_mode=ParseMode.HTML
+    )

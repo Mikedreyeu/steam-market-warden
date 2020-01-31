@@ -1,6 +1,7 @@
 import logging
 import sys
 import traceback
+from datetime import timedelta
 
 from emoji import emojize
 from telegram import ParseMode, Update
@@ -11,8 +12,7 @@ from telegram.utils.helpers import mention_html
 from settings import BOT_TOKEN, CHAT_FOR_ERRORS
 from telegram_bot.commands import start_command, item_info_command, \
     market_search_command, item_info_timed_command, item_info_daily_command, \
-    item_info_alert_command, item_info_repeating_command, help_command, \
-    test_command
+    item_info_alert_command, item_info_repeating_command, help_command
 from telegram_bot.constants import (ST_CHOOSE_JOB_TYPE, CB_CANCEL,
                                     ST_CHOOSE_JOB, CB_BACK,
                                     ST_MANAGE_JOB, MANAGE_JOB_REGEX,
@@ -21,6 +21,7 @@ from telegram_bot.constants import (ST_CHOOSE_JOB_TYPE, CB_CANCEL,
 from telegram_bot.conversations import manage_item_info_jobs_command, end_conv, \
     choose_job_conv, manage_job_conv, delete_job_conv, edit_job_conv
 from telegram_bot.exceptions.exceptions import CommandException, ApiException
+from telegram_bot.jobs import save_jobs_job
 from telegram_bot.utils.job_utils import save_jobs, load_jobs
 
 logging.basicConfig(
@@ -82,7 +83,7 @@ def main():
     job_queue = updater.job_queue
     dp = updater.dispatcher
 
-    # job_queue.run_repeating(save_jobs_job, timedelta(minutes=1))
+    job_queue.run_repeating(save_jobs_job, timedelta(minutes=1))
 
     try:
         load_jobs(dp, job_queue)
@@ -141,7 +142,6 @@ def main():
         CommandHandler('item_info_repeating', item_info_repeating_command)
     )
     dp.add_handler(CommandHandler('help', help_command))
-    dp.add_handler(CommandHandler('test', test_command))
 
     dp.add_error_handler(error_handler)
 

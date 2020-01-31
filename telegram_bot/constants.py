@@ -2,7 +2,7 @@ JOBS_PICKLE = '../pickles/user_jobs.pickle'
 
 NO_IMAGE_ARG = '-no_image'
 
-QUOTATION_MARKS = ('"', "'", '`', '“', '‘', '’')
+QUOTATION_MARKS = ('"', "'", '`', '“', '”', '‘', '’')
 
 
 # Stages
@@ -110,3 +110,63 @@ NUMBERS = {
     8: ':eight:',
     9: ':nine:'
 }
+
+
+help_command_text = (
+    'You can control this bot by sending these commands:\n\n'
+    
+    '/item_info - get item info\n'
+    'Usage: /item_info <i>appid</i> <i>full_name_of_the_item</i> [<i>-no_image</i>]\n'
+    '<i>appid</i> - id of an app\n'
+    '<i>full_name_of_the_item</i> - name of the item or part of it\n'
+    '<i>-no_image</i> - you can add this to your command if you want item info without image\n'
+    f'If full_name_of_the_item has spaces, you need to type it inside quotation marks({" ".join(QUOTATION_MARKS)}).\n'
+    'Example: /item_info 440 "Mann Co. Supply Crate Key"\n'
+    
+    '/market_search -  search the market\n'
+    'Usage: /market_search <i>query</i> [<i>-no_image</i>]\n'
+    '<i>query</i> - name of the item or part of it\n'
+    '<i>-no_image</i> - you can add this to your command if you want item info without image\n'
+    f'If query has spaces, you need to type it inside quotation marks({" ".join(QUOTATION_MARKS)}).\n'
+    'Example: /market_search gloves\n'
+    
+    
+    '\n<b>Jobs</b>\n'
+    
+    '/manage_item_info_jobs - manage your jobs\n'
+    'Usage: /manage_item_info_jobs\n'
+    
+    '/item_info_timed - get item info on specific time once\n'
+    'Usage: /item_info_timed <i>when</i> - <i>appid</i> <i>full_name_of_the_item</i> [<i>-no_image</i>]\n'
+    '<i>when</i> - time in or at which the item info should be sent to you:\n'
+    '• If it\'s a datetime in format <i>hh:mm dd.mm.yyyy</i> it will be interpreted as a specific date and time at which the job should run.\n'
+    '• If it\'s an integer it will be interpreted as “seconds from now” in which the job should run.\n'
+    '<i>appid</i>, <i>full_name_of_the_item</i>, <i>-no_image</i> - same as in /item_info\n' 
+    'Example 1: /item_info_timed 14:35 31.01.2020 - 440 "Mann Co. Supply Crate Key"\n'
+    'Example 2: /item_info_timed 200 - 440 "Mann Co. Supply Crate Key\n'
+    
+    '/item_info_repeating - get item info repeatedly\n'
+    'Usage: /item_info_repeating <i>interval</i> [<i>first</i>] - <i>appid</i> <i>full_name_of_the_item</i> [<i>-no_image</i>]\n'
+    '<i>interval</i> - interval in which item info should be sent in format <i>[[number][m|h|d|w]]+</i> where <i>number</i> means any positive integer, <i>|</i> means "or", <i>+</i> means any number of times\n'
+    '<i>first</i> - datetime in format <i>hh:mm dd.mm.yyyy</i> at which the item info should be sent for the first time(defaults to now)\n'
+    'Example 1: /item_info_repeating 6h20m 23:08 31.01.2020 - 440 "Mann Co. Supply Crate Key"\n'
+    'Example 2: /item_info_repeating 1m1h1d1w - 440 "Mann Co. Supply Crate Key"\n'
+    
+    '/item_info_daily - get item info every day(or on some days of the week)\n'
+    'Usage: /item_info_daily [<i>days_of_the_week</i>] <i>time</i> - <i>appid</i> <i>full_name_of_the_item</i> [<i>-no_image</i>]\n'
+    '<i>days_of_the_week</i> - defines on which days of the week the item info should be sent. Defaults to every day. Format: days represented as numbers (1 = Monday) and separated by comma (",") without space.\n'
+    '<i>time</i> - time of day at which the item info should be sent\n'
+    'Example 1: /item_info_daily 22:54 - 440 "Mann Co. Supply Crate Key"\n'
+    'Example 2: /item_info_daily 1,3,5 20:54 - 440 "Mann Co. Supply Crate Key"\n'
+    
+    
+    '/item_info_alert - set the alert\n'
+    'When all conditions are met an alarm will be sent.\n'
+    'Usage: /item_info_alert <i>conditions</i> - <i>appid</i> <i>full_name_of_the_item</i> [<i>-no_image</i>]\n'
+    '<i>conditions</i> - set of conditions in format <i>property__sign=value</i> separated with spaces:\n'
+    f'• Available properties: <i>{SELL_PRICE}</i>, <i>{SELL_LISTINGS}</i>, <i>{MEDIAN_PRICE}</i>, <i>{VOLUME}</i>\n'
+    f'• Available signs: <i>{GT_POSTFIX}</i>(greater than), <i>{LT_POSTFIX}</i>(less than), <i>{GTE_POSTFIX}</i>(greater than or equal to), <i>{LTE_POSTFIX}</i>(less than or equal to)\n'
+    '• Value is a floating-point number\n'
+    'Example 1: /item_info_alert sell_price__gt=2.55 - 440 "Mann Co. Supply Crate Key"\n'
+    'Example 2: /item_info_alert sell_price__gt=6 sell_listings__lt=50 median_price__gte = 5.22 volume__lte=10 - 440 "Mann Co. Supply Crate Key"\n'
+)

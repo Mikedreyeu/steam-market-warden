@@ -28,7 +28,11 @@ def parse_args(original_args: list):
             if arg.startswith((*QUOTATION_MARKS, '«')):
                 while not arg.endswith((*QUOTATION_MARKS, '»')):
                     arg += f' {next(args_iter)}'
-            arguments.append(arg.strip(', "\'`'))
+            arguments.append(
+                arg.strip(
+                    "".join([*QUOTATION_MARKS, ' ', '«', '»'])
+                )
+            )
     except StopIteration:
         raise CommandException(ERRMSG_BRACKETS_ERROR)
 
