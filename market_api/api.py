@@ -8,7 +8,7 @@ from market_api.constants import (
     SEARCH_KEYS_TO_EXTRACT, PRICE_OVERVIEW_KEYS_TO_EXTRACT, PRICE_OVERVIEW_URL,
     MARKET_SEARCH_URL
 )
-from market_api.utils import build_icon_url
+from market_api.utils import build_icon_url, build_market_url
 from telegram_bot.exceptions.error_messages import ERRMSG_NOTHING_FOUND
 from telegram_bot.exceptions.exceptions import ApiException
 
@@ -114,6 +114,10 @@ def get_item_info(appid: int, market_hash_name: str, currency: int = 1):
             result['asset_description']['icon_url']
         )
 
+        item_info['market_url'] = build_market_url(
+            result['asset_description']['appid'], result['name']
+        )
+
         if market_hash_name.lower() not in (
                 result['hash_name'].lower(), result['name'].lower()
         ):
@@ -164,6 +168,10 @@ def market_search_for_command(
 
         market_search_dict['icon_url'] = build_icon_url(
             result['asset_description']['icon_url']
+        )
+
+        market_search_dict['market_url'] = build_market_url(
+            result['asset_description']['appid'], result['name']
         )
 
         market_search_dict['appid'] = result['asset_description'].get('appid')

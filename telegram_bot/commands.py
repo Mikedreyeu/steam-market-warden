@@ -49,7 +49,8 @@ def market_search_command(update: Update, context: CallbackContext):
 
     send_item_message(
         context, update.effective_chat.id, message_text,
-        no_image, market_search_dict['icon_url']
+        no_image, market_search_dict['icon_url'],
+        market_search_dict['market_url']
     )
 
 

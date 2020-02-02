@@ -5,7 +5,8 @@ from datetime import timezone, timedelta, datetime, time
 from functools import wraps
 
 from emoji import emojize
-from telegram import ChatAction, ParseMode, Update
+from telegram import ChatAction, ParseMode, Update, InlineKeyboardMarkup, \
+    InlineKeyboardButton
 from telegram.ext import CallbackContext
 
 from market_api.api import get_item_info
@@ -98,8 +99,12 @@ def send_typing_action(func):
 
 def send_item_message(
         context, chat_id: int, message_text: str,
-        no_image: bool, image_url: str
+        no_image: bool, image_url: str, url: str
 ):
+    reply_markup = InlineKeyboardMarkup(
+        [[InlineKeyboardButton('Market link', url=url)]]
+    )
+
     if not no_image:
         context.bot.send_photo(
             chat_id=chat_id,
