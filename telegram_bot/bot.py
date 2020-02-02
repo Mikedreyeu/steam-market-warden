@@ -76,7 +76,6 @@ def error_handler(update: Update, context: CallbackContext):
             CHAT_FOR_ERRORS, text, parse_mode=ParseMode.HTML
         )
 
-
 def main():
     updater = Updater(BOT_TOKEN, use_context=True)
 

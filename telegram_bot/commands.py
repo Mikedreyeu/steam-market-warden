@@ -10,7 +10,9 @@ from market_api.api import market_search_for_command
 from telegram_bot.constants import (NO_IMAGE_ARG, TIMEDELTA_KEYS,
                                     INTERVAL_UNIT_REGEX, II_TIMED_JOBS,
                                     II_DAILY_JOBS, II_REPEATING_JOBS,
-                                    II_ALERT_JOBS, JOBS, help_command_text)
+                                    II_ALERT_JOBS, JOBS,
+                                    help_command_text_part_1,
+                                    help_command_text_part_2)
 from telegram_bot.exceptions.error_messages import (ERRMSG_NOT_ENOUGH_ARGS,
                                                     ERRMSG_WRONG_INTERVAL_FORMAT,
                                                     ERRMSG_WRONG_DOTW_FORMAT)
@@ -26,9 +28,8 @@ from telegram_bot.utils.utils import parse_args, send_typing_action, \
 
 
 def start_command(update: Update, context: CallbackContext):
-    update.message.reply_text(
-        text=help_command_text, parse_mode=ParseMode.HTML
-    )
+    help_command(update, context)
+
 
 
 @send_typing_action
@@ -60,6 +61,9 @@ def item_info_command(update: Update, context: CallbackContext):
 
 def item_info_timed_command(update: Update, context: CallbackContext):
     args = parse_args(context.args)
+
+    if len(args) < 4:
+        raise CommandException(ERRMSG_NOT_ENOUGH_ARGS)
 
     if args[0].isdigit():
         when = int(args[0])
@@ -93,6 +97,9 @@ def item_info_timed_command(update: Update, context: CallbackContext):
 
 def item_info_repeating_command(update: Update, context: CallbackContext):
     args = parse_args(context.args)
+
+    if len(args) < 4:
+        raise CommandException(ERRMSG_NOT_ENOUGH_ARGS)
 
     chat_id = update.message.chat_id
 
@@ -141,6 +148,9 @@ def item_info_repeating_command(update: Update, context: CallbackContext):
 def item_info_daily_command(update: Update, context: CallbackContext):
     args = parse_args(context.args)
 
+    if len(args) < 4:
+        raise CommandException(ERRMSG_NOT_ENOUGH_ARGS)
+
     chat_id = update.message.chat_id
 
     if args.index('-') >= 2:
@@ -183,6 +193,9 @@ def item_info_daily_command(update: Update, context: CallbackContext):
 def item_info_alert_command(update: Update, context: CallbackContext):
     args = parse_args(context.args)
 
+    if len(args) < 4:
+        raise CommandException(ERRMSG_NOT_ENOUGH_ARGS)
+
     chat_id = update.message.chat_id
 
     job_context = {
@@ -216,5 +229,10 @@ def item_info_alert_command(update: Update, context: CallbackContext):
 
 def help_command(update: Update, context: CallbackContext):
     update.message.reply_text(
-        text=help_command_text, parse_mode=ParseMode.HTML
+        text=emojize(help_command_text_part_1, use_aliases=True),
+        parse_mode=ParseMode.HTML
+    )
+    update.message.reply_text(
+        text=emojize(help_command_text_part_2, use_aliases=True),
+        parse_mode=ParseMode.HTML
     )

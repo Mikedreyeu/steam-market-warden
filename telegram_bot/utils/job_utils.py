@@ -10,6 +10,9 @@ from telegram_bot.constants import JOBS_PICKLE, JOB_TO_CHAT_DATA_KEY, JOBS, \
 
 
 def _add_job_to_chat_data(dispatcher: Dispatcher, job: Job):
+    if job.name == 'save_jobs_job':
+        return
+
     chat_id = job.context['chat_id']
     job_chat_data_key = JOB_TO_CHAT_DATA_KEY[job.name]
 
