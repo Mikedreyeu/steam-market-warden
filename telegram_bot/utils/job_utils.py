@@ -4,14 +4,13 @@ from time import time
 
 from telegram.ext import Dispatcher, Job, JobQueue, CallbackContext
 
-from telegram_bot.constants import JOBS_PICKLE, JOB_TO_CHAT_DATA_KEY, JOBS, \
+from db.models import Chat, Job as Job_model
+from settings import db
+from telegram_bot.constants import JOB_TO_CHAT_DATA_KEY, JOBS, \
     II_ALERT_JOBS, II_REPEATING_JOBS, II_DAILY_JOBS, II_TIMED_JOBS
 
 
 def _add_job_to_chat_data(dispatcher: Dispatcher, job: Job):
-    if job.name == 'save_jobs_job':
-        return
-
     chat_id = job.context['chat_id']
     job_chat_data_key = JOB_TO_CHAT_DATA_KEY[job.name]
 
@@ -37,29 +36,25 @@ def remove_job(context: CallbackContext, chat_id: int, job: Job):
 def load_jobs(dispatcher: Dispatcher, jq: JobQueue):
     now = time()
 
-    with open(JOBS_PICKLE, 'rb') as file_jobs_pickle:
-        while True:
-            try:
-                next_t, job = pickle.load(file_jobs_pickle)
-            except EOFError:
-                break
+    for job in Job_model.all():
+        next_t, job = pickle.loads(job.job_blob)
 
-            enabled = job._enabled
-            removed = job._remove
+        enabled = job._enabled
+        removed = job._remove
 
-            job._enabled = Event()
-            job._remove = Event()
+        job._enabled = Event()
+        job._remove = Event()
 
-            if enabled:
-                job._enabled.set()
+        if enabled:
+            job._enabled.set()
 
-            if removed:
-                job._remove.set()
+        if removed:
+            job._remove.set()
 
-            next_t -= now
+        next_t -= now
 
-            jq._put(job, next_t)
-            _add_job_to_chat_data(dispatcher, job)
+        jq._put(job, next_t)
+        _add_job_to_chat_data(dispatcher, job)
 
 
 def save_jobs(jq: JobQueue):
@@ -68,19 +63,24 @@ def save_jobs(jq: JobQueue):
     else:
         job_tuples = []
 
-    with open(JOBS_PICKLE, 'wb') as file_jobs_pickle:
-        for next_t, job in job_tuples:
+    db.table('jobs').truncate()
 
-            _job_queue = job._job_queue
-            _remove = job._remove
-            _enabled = job._enabled
+    for next_t, job in job_tuples:
+        if job.name == 'save_jobs_job':
+            continue
 
-            job._job_queue = None
-            job._remove = job.removed
-            job._enabled = job.enabled
+        _job_queue = job._job_queue
+        _remove = job._remove
+        _enabled = job._enabled
 
-            pickle.dump((next_t, job), file_jobs_pickle)
+        job._job_queue = None
+        job._remove = job.removed
+        job._enabled = job.enabled
 
-            job._job_queue = _job_queue
-            job._remove = _remove
-            job._enabled = _enabled
+        chat = Chat.first_or_create(chat_id=job.context['chat_id'])
+        job_db = Job_model.first_or_create(job_blob=pickle.dumps((next_t, job)))
+        chat.jobs().save(job_db)
+
+        job._job_queue = _job_queue
+        job._remove = _remove
+        job._enabled = _enabled

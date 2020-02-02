@@ -2,7 +2,6 @@ import logging
 import sys
 import traceback
 from datetime import timedelta
-from pathlib import Path
 
 from emoji import emojize
 from telegram import ParseMode, Update
@@ -18,7 +17,7 @@ from telegram_bot.constants import (ST_CHOOSE_JOB_TYPE, CB_CANCEL,
                                     ST_CHOOSE_JOB, CB_BACK,
                                     ST_MANAGE_JOB, MANAGE_JOB_REGEX,
                                     CHOOSE_JOB_TYPE_REGEX, CB_EDIT_JOB,
-                                    CB_DELETE_JOB, JOBS_PICKLE_FOLDER)
+                                    CB_DELETE_JOB)
 from telegram_bot.conversations import manage_item_info_jobs_command, end_conv, \
     choose_job_conv, manage_job_conv, delete_job_conv, edit_job_conv
 from telegram_bot.exceptions.exceptions import CommandException, ApiException
@@ -83,8 +82,6 @@ def main():
 
     job_queue = updater.job_queue
     dp = updater.dispatcher
-
-    Path(JOBS_PICKLE_FOLDER).mkdir(parents=True, exist_ok=True)
 
     job_queue.run_repeating(save_jobs_job, timedelta(minutes=1))
 
