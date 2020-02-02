@@ -1,5 +1,4 @@
 import pickle
-from collections import defaultdict
 from threading import Event
 from time import time
 

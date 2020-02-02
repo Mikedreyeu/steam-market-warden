@@ -1,5 +1,3 @@
-from typing import Union
-
 from telegram.ext.jobqueue import Days, Job
 
 from telegram_bot.constants import SELL_PRICE, MEDIAN_PRICE, CURRENCY_SYMBOL, \

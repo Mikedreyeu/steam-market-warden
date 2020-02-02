@@ -20,9 +20,9 @@ from telegram_bot.exceptions.exceptions import CommandException
 from telegram_bot.jobs import item_info_timed_job, \
     check_values_of_an_item_info_job, item_info_repeating_job, \
     item_info_daily_job
-from telegram_bot.utils.job_utils import save_jobs, init_jobs_dict_chat_data
+from telegram_bot.utils.job_utils import init_jobs_dict_chat_data
 from telegram_bot.utils.message_builder import format_market_search, \
-    format_days_of_the_week, format_alerts_conditions, format_job
+    format_job
 from telegram_bot.utils.utils import parse_args, send_typing_action, \
     send_item_message, send_item_info, parse_datetime, parse_time
 

@@ -3,10 +3,9 @@ from telegram import ParseMode
 from telegram.ext import CallbackContext
 
 from market_api.api import get_item_info
-from telegram_bot.constants import KV_SEPARATOR, COND_SEPARATOR, SELL_PRICE, \
+from telegram_bot.constants import SELL_PRICE, \
     MEDIAN_PRICE, CURRENCY_SYMBOL, ALLOWED_KEYS_FOR_ALERT, GT_POSTFIX, \
-    LT_POSTFIX, GTE_POSTFIX, LTE_POSTFIX, POSTFIX_TO_SYMBOL, ALLOWED_POSTFIXES, \
-    II_TIMED_JOBS, II_ALERT_JOBS, JOBS
+    LT_POSTFIX, GTE_POSTFIX, LTE_POSTFIX, POSTFIX_TO_SYMBOL, ALLOWED_POSTFIXES
 from telegram_bot.exceptions.error_messages import \
     ERRMSG_ALERT_NOT_VALID_CONDITIONS, ERRMSG_ALERT_NOT_ALLOWED_KEYS, \
     ERRMSG_ALERT_NOT_VALID_POSTFIX

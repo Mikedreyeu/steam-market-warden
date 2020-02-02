@@ -16,10 +16,8 @@ from telegram_bot.constants import (ST_CHOOSE_JOB_TYPE, CB_ALL,
                                     CB_EDIT_JOB, CB_CANCEL)
 from telegram_bot.exceptions.exceptions import CommandException
 from telegram_bot.utils.job_utils import remove_job
-from telegram_bot.utils.message_builder import format_when_timed_job, \
-    format_days_of_the_week, format_job
-from telegram_bot.utils.utils import build_menu, parse_alert_conditions, \
-    get_paginated_list
+from telegram_bot.utils.message_builder import format_job
+from telegram_bot.utils.utils import build_menu, get_paginated_list
 
 
 def manage_item_info_jobs_command(update: Update, context: CallbackContext):
