@@ -1,4 +1,5 @@
-JOBS_PICKLE = '../pickles/user_jobs.pickle'
+JOBS_PICKLE_FOLDER = '../pickles/'
+JOBS_PICKLE = f'{JOBS_PICKLE_FOLDER}user_jobs.pickle'
 
 NO_IMAGE_ARG = '-no_image'
 
