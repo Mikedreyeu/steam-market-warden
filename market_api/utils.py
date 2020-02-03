@@ -12,7 +12,7 @@ def build_icon_url(icon_url: str, size_argument: str = None):
 
 def build_market_url(appid: int, item_name: str):
     return (
-        f'https://steamcommunity.com/market/listings/'
+        f'https://steamcommunity.com/market/listings'
         f'/{appid}/{item_name}'
     )
 

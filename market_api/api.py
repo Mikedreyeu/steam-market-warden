@@ -115,7 +115,7 @@ def get_item_info(appid: int, market_hash_name: str, currency: int = 1):
         )
 
         item_info['market_url'] = build_market_url(
-            result['asset_description']['appid'], result['name']
+            result['asset_description']['appid'], result['hash_name']
         )
 
         if market_hash_name.lower() not in (
@@ -171,7 +171,7 @@ def market_search_for_command(
         )
 
         market_search_dict['market_url'] = build_market_url(
-            result['asset_description']['appid'], result['name']
+            result['asset_description']['appid'], result['hash_name']
         )
 
         market_search_dict['appid'] = result['asset_description'].get('appid')

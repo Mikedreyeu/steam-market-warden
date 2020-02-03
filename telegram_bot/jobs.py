@@ -80,7 +80,7 @@ def check_values_of_an_item_info_job(context: CallbackContext):
 
         send_item_message(
             context, chat_id, format_item_info(item_info_dict),
-            no_image, item_info_dict['icon_url']
+            no_image, item_info_dict['icon_url'], item_info_dict['market_url']
         )
 
         remove_job(context, chat_id, context.job)
