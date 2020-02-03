@@ -1,6 +1,7 @@
 PRICE_OVERVIEW_KEYS_TO_EXTRACT = (
     'volume',
-    'median_price'
+    'median_price',
+    'lowest_price'
 )
 
 SEARCH_KEYS_TO_EXTRACT = (

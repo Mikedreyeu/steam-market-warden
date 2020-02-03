@@ -39,6 +39,9 @@ def check_values_of_an_item_info_job(context: CallbackContext):
         if key_name not in ALLOWED_KEYS_FOR_ALERT:
             raise CommandException(ERRMSG_ALERT_NOT_ALLOWED_KEYS)
 
+        if not item_info_dict[key_name]:
+            continue
+
         alert_text = (
             f'<b>{key_name}: {currency_symbol}{item_info_dict[key_name]}</b>'
             f' {{}} '

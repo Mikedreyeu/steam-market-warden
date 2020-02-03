@@ -17,7 +17,7 @@ DATETIME_FORMAT = '%H:%M %d.%m.%Y'
 
 KV_SEPARATOR = '='
 
-SELL_PRICE = 'sell_price'
+SELL_PRICE = 'lowest_price'
 SELL_LISTINGS = 'sell_listings'
 MEDIAN_PRICE = 'median_price'
 VOLUME = 'volume'
