@@ -13,6 +13,8 @@ ERRMSG_WRONG_DOTW_FORMAT = 'Wrong days of the week format. Days of the week need
 
 # api
 ERRMSG_NOTHING_FOUND = 'There were no items matching your arguments.'
+ERRMSG_API_COOLDOWN = 'Steam market api request limit reached. Please wait a few minutes.'
 
 # warnings
 WRNMSG_NOT_EXACT = 'There were no items exactly matching your arguments. This is a closest one.'
+WRNMSG_NOT_FULL_INFO = 'Steam market api request limit was reached, some data can be missing.'

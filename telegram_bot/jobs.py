@@ -1,3 +1,5 @@
+from time import sleep
+
 from emoji import emojize
 from telegram import ParseMode
 from telegram.ext import CallbackContext
@@ -5,7 +7,8 @@ from telegram.ext import CallbackContext
 from market_api.api import get_item_info
 from telegram_bot.constants import SELL_PRICE, \
     MEDIAN_PRICE, CURRENCY_SYMBOL, ALLOWED_KEYS_FOR_ALERT, GT_POSTFIX, \
-    LT_POSTFIX, GTE_POSTFIX, LTE_POSTFIX, POSTFIX_TO_SYMBOL, ALLOWED_POSTFIXES
+    LT_POSTFIX, GTE_POSTFIX, LTE_POSTFIX, POSTFIX_TO_SYMBOL, ALLOWED_POSTFIXES, \
+    API_REQUEST_COOLDOWN
 from telegram_bot.exceptions.error_messages import \
     ERRMSG_ALERT_NOT_VALID_CONDITIONS, ERRMSG_ALERT_NOT_ALLOWED_KEYS, \
     ERRMSG_ALERT_NOT_VALID_POSTFIX
@@ -38,6 +41,9 @@ def check_values_of_an_item_info_job(context: CallbackContext):
 
         if key_name not in ALLOWED_KEYS_FOR_ALERT:
             raise CommandException(ERRMSG_ALERT_NOT_ALLOWED_KEYS)
+
+        if not item_info_dict.get(key_name):
+            continue
 
         alert_text = (
             f'<b>{key_name}: {currency_symbol}{item_info_dict[key_name]}</b>'
@@ -83,7 +89,9 @@ def check_values_of_an_item_info_job(context: CallbackContext):
             no_image, item_info_dict['icon_url'], item_info_dict['market_url']
         )
 
-        remove_job(context, chat_id, context.job)
+        remove_job(context, chat_id, context.job.context['job'])
+
+    sleep(API_REQUEST_COOLDOWN)
 
 
 @job_error_handler
@@ -92,6 +100,7 @@ def item_info_repeating_job(context: CallbackContext):
         context, context.job.context['chat_id'], context.job.context['item_info_args'],
         add_to_message=f'\n\n:alarm_clock: _Repeating item info request_'
     )
+    sleep(API_REQUEST_COOLDOWN)
 
 
 @job_error_handler
@@ -100,6 +109,7 @@ def item_info_daily_job(context: CallbackContext):
         context, context.job.context['chat_id'], context.job.context['item_info_args'],
         add_to_message=f'\n\n:alarm_clock: _Daily item info request_'
     )
+    sleep(API_REQUEST_COOLDOWN)
 
 
 @job_error_handler
@@ -112,6 +122,8 @@ def item_info_timed_job(context: CallbackContext):
     )
 
     remove_job(context, chat_id, context.job)
+
+    sleep(API_REQUEST_COOLDOWN)
 
 
 @job_error_handler

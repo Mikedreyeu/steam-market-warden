@@ -1,5 +1,6 @@
 import re
 from datetime import timedelta, datetime, timezone
+from time import sleep
 
 from emoji import emojize
 from telegram import ParseMode, Update
@@ -12,7 +13,8 @@ from telegram_bot.constants import (NO_IMAGE_ARG, TIMEDELTA_KEYS,
                                     II_DAILY_JOBS, II_REPEATING_JOBS,
                                     II_ALERT_JOBS, JOBS,
                                     help_command_text_part_1,
-                                    help_command_text_part_2)
+                                    help_command_text_part_2,
+                                    API_REQUEST_COOLDOWN)
 from telegram_bot.exceptions.error_messages import (ERRMSG_NOT_ENOUGH_ARGS,
                                                     ERRMSG_WRONG_INTERVAL_FORMAT,
                                                     ERRMSG_WRONG_DOTW_FORMAT)
@@ -21,15 +23,13 @@ from telegram_bot.jobs import item_info_timed_job, \
     check_values_of_an_item_info_job, item_info_repeating_job, \
     item_info_daily_job
 from telegram_bot.utils.job_utils import init_jobs_dict_chat_data
-from telegram_bot.utils.message_builder import format_market_search, \
-    format_job
+from telegram_bot.utils.message_builder import format_market_search, format_job
 from telegram_bot.utils.utils import parse_args, send_typing_action, \
     send_item_message, send_item_info, parse_datetime, parse_time
 
 
 def start_command(update: Update, context: CallbackContext):
     help_command(update, context)
-
 
 
 @send_typing_action
@@ -53,11 +53,15 @@ def market_search_command(update: Update, context: CallbackContext):
         market_search_dict['market_url']
     )
 
+    sleep(API_REQUEST_COOLDOWN)
+
 
 @send_typing_action
 def item_info_command(update: Update, context: CallbackContext):
     args = parse_args(context.args)
     send_item_info(context, update.effective_chat.id, args)
+
+    sleep(API_REQUEST_COOLDOWN)
 
 
 def item_info_timed_command(update: Update, context: CallbackContext):
@@ -119,7 +123,7 @@ def item_info_repeating_command(update: Update, context: CallbackContext):
     if args.index('-') >= 3:
         first = parse_datetime(f'{args[1]} {args[2]}')
     else:
-        first = datetime.now(tz=timezone(timedelta(hours=3)))
+        first = datetime.now(tz=timezone(timedelta(hours=3)))   # TODO: this timezone is temporary
 
     job_context = {
         'chat_id': chat_id,
@@ -205,13 +209,15 @@ def item_info_alert_command(update: Update, context: CallbackContext):
         'item_info_args': args[args.index('-')+1:]
     }
 
-    context.job_queue.run_once(
-        check_values_of_an_item_info_job, 1, job_context
-    )
-
     new_job = context.job_queue.run_repeating(
         check_values_of_an_item_info_job, timedelta(hours=1),
         context=job_context
+    )
+
+    job_context['job'] = new_job
+
+    context.job_queue.run_once(
+        check_values_of_an_item_info_job, 1, job_context
     )
 
     init_jobs_dict_chat_data(context.chat_data)

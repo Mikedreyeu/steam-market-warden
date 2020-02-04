@@ -5,6 +5,7 @@ NO_IMAGE_ARG = '-no_image'
 
 QUOTATION_MARKS = ('"', "'", '`', '“', '”', '‘', '’')
 
+API_REQUEST_COOLDOWN = 5
 
 # Stages
 ST_CHOOSE_JOB_TYPE, ST_CHOOSE_JOB, ST_MANAGE_JOB = range(3)
@@ -178,10 +179,10 @@ help_command_text_part_2 = (
     '\n<b>Args:</b>\n'
     '<b>1. <i>conditions</i></b> - set of conditions in format <i>property__sign=value</i> separated with spaces:\n'
     f'  • Available <i>properties</i>: <i>{SELL_PRICE}</i>, <i>{SELL_LISTINGS}</i>, <i>{MEDIAN_PRICE}</i>, <i>{VOLUME}</i>\n'
-    f'  • Available <i>signs</i>: <i>{GT_POSTFIX}</i>(greater than), <i>{LT_POSTFIX}</i>(less than), <i>{GTE_POSTFIX}</i>(greater than or equal to), <i>{LTE_POSTFIX}</i>(less than or equal to)\n'
+    f'  • Available <i>signs</i>: <i>{GT_POSTFIX}</i> (greater than), <i>{LT_POSTFIX}</i> (less than), <i>{GTE_POSTFIX}</i> (greater than or equal to), <i>{LTE_POSTFIX}</i> (less than or equal to)\n'
     '   • <i>Value</i> is a floating-point number\n'
     '<b>2. <i>appid</i>, <i>item_name</i>, <i>-no_image</i></b> - same as in /item_info\n'
     '\n<b>Examples:</b>\n'
     '<i>/item_info_alert sell_price__gt=2.55 - 440 "Mann Co. Supply Crate Key"</i>\n'
-    '<i>/item_info_alert sell_price__gt=6 sell_listings__lt=50 median_price__gte = 5.22 volume__lte=10 - 440 "Mann Co. Supply Crate Key" </i>\n'
+    '<i>/item_info_alert sell_price__gt=6 sell_listings__lt=50 median_price__gte=5.22 volume__lte=10 - 440 "Mann Co. Supply Crate Key" </i>\n'
 )

@@ -66,7 +66,7 @@ def save_jobs(jq: JobQueue):
     db.table('jobs').truncate()
 
     for next_t, job in job_tuples:
-        if job.name == 'save_jobs_job':
+        if job.name == 'save_jobs_job' or job.removed:
             continue
 
         _job_queue = job._job_queue
