@@ -210,6 +210,9 @@ def manage_job_conv(update: Update, context: CallbackContext):
         ),
         InlineKeyboardButton(
             'Delete', callback_data=CB_DELETE_JOB
+        ),
+        InlineKeyboardButton(
+            'Back', callback_data=CB_BACK
         )
     ]
 
@@ -239,7 +242,6 @@ def edit_job_conv(update: Update, context: CallbackContext):
 def delete_job_conv(update: Update, context: CallbackContext):
     query = update.callback_query
     job = context.user_data[SELECTED_JOB]
-    job_name = job.name
 
     remove_job(
         context, query.message.chat_id, job
@@ -253,7 +255,13 @@ def delete_job_conv(update: Update, context: CallbackContext):
         text=emojize('Job deleted', use_aliases=True)
     )
 
-    context.args = {'job_type': JOB_TO_CHAT_DATA_KEY[job_name]}
+    context.args = {'job_type': JOB_TO_CHAT_DATA_KEY[job.name]}
+    return choose_job_conv(update, context)
+
+
+def back_to_choose_job_conv(update: Update, context: CallbackContext):
+    job = context.user_data[SELECTED_JOB]
+    context.args = {'job_type': JOB_TO_CHAT_DATA_KEY[job.name]}
     return choose_job_conv(update, context)
 
 

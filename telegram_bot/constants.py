@@ -5,6 +5,7 @@ NO_IMAGE_ARG = '-no_image'
 
 QUOTATION_MARKS = ('"', "'", '`', '“', '”', '‘', '’')
 
+API_REQUEST_COOLDOWN = 5
 
 # Stages
 ST_CHOOSE_JOB_TYPE, ST_CHOOSE_JOB, ST_MANAGE_JOB = range(3)
@@ -17,7 +18,7 @@ DATETIME_FORMAT = '%H:%M %d.%m.%Y'
 
 KV_SEPARATOR = '='
 
-SELL_PRICE = 'lowest_price'
+SELL_PRICE = 'sell_price'
 SELL_LISTINGS = 'sell_listings'
 MEDIAN_PRICE = 'median_price'
 VOLUME = 'volume'

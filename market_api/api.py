@@ -8,8 +8,11 @@ from market_api.constants import (
     SEARCH_KEYS_TO_EXTRACT, PRICE_OVERVIEW_KEYS_TO_EXTRACT, PRICE_OVERVIEW_URL,
     MARKET_SEARCH_URL
 )
-from market_api.utils import build_icon_url, build_market_url
-from telegram_bot.exceptions.error_messages import ERRMSG_NOTHING_FOUND
+from market_api.utils import build_icon_url, build_market_url, \
+    parse_market_search_general_info
+from telegram_bot.constants import SELL_PRICE
+from telegram_bot.exceptions.error_messages import ERRMSG_NOTHING_FOUND, \
+    ERRMSG_API_COOLDOWN
 from telegram_bot.exceptions.exceptions import ApiException
 
 
@@ -92,7 +95,7 @@ def market_search(
 
 
 def get_item_info(appid: int, market_hash_name: str, currency: int = 1):
-    item_info = {'exact_item': True}
+    item_info = {'exact_item': True, 'full_info': True}
 
     (price_overview_response,
      market_search_response) = request_item_info_async(
@@ -100,7 +103,10 @@ def get_item_info(appid: int, market_hash_name: str, currency: int = 1):
     )
 
     if market_search_response is None:
+        item_info['full_info'] = False
         item_info['name'] = market_hash_name
+        item_info['icon_url'] = None
+        item_info['market_url'] = None
     elif market_search_response['success']:
         if market_search_response['total_count'] == 0:
             raise ApiException(ERRMSG_NOTHING_FOUND)
@@ -108,15 +114,7 @@ def get_item_info(appid: int, market_hash_name: str, currency: int = 1):
         result = market_search_response['results'][0]
 
         item_info.update(
-            {key: result.get(key) for key in SEARCH_KEYS_TO_EXTRACT}
-        )
-
-        item_info['icon_url'] = build_icon_url(
-            result['asset_description']['icon_url']
-        )
-
-        item_info['market_url'] = build_market_url(
-            result['asset_description']['appid'], result['hash_name']
+            parse_market_search_general_info(result)
         )
 
         if market_hash_name.lower() not in (
@@ -131,6 +129,8 @@ def get_item_info(appid: int, market_hash_name: str, currency: int = 1):
                 currency=currency
             )
     if price_overview_response is None:
+        item_info['full_info'] = False
+        item_info['sell_price'] = None
         item_info.update(
             {
                 key: None
@@ -145,12 +145,17 @@ def get_item_info(appid: int, market_hash_name: str, currency: int = 1):
             }
         )
 
-        for key in PRICE_OVERVIEW_KEYS_TO_EXTRACT:
+        item_info[SELL_PRICE] = price_overview_response.get('lowest_price')
+
+        for key in (*PRICE_OVERVIEW_KEYS_TO_EXTRACT, SELL_PRICE):
             if item_info[key]:
                 if key == 'volume':
                     item_info[key] = int(item_info[key])
                 else:
                     item_info[key] = float(item_info[key][1:])
+
+    if market_search_response is None and price_overview_response is None:
+        raise ApiException(ERRMSG_API_COOLDOWN)
 
     return item_info
 
@@ -160,26 +165,17 @@ def market_search_for_command(
         sort_column: str = None, sort_dir: str = None, **kwargs
 ):
     market_search_dict = {}
-
     market_search_response = market_search(query=query)
 
-    if market_search_response['success']:
+    if market_search_response is None:
+        raise ApiException(ERRMSG_API_COOLDOWN)
+    elif market_search_response['success']:
         if market_search_response['total_count'] == 0:
             raise ApiException(ERRMSG_NOTHING_FOUND)
 
         result = market_search_response['results'][0]
 
-        market_search_dict.update(
-            {key: result.get(key) for key in SEARCH_KEYS_TO_EXTRACT}
-        )
-
-        market_search_dict['icon_url'] = build_icon_url(
-            result['asset_description']['icon_url']
-        )
-
-        market_search_dict['market_url'] = build_market_url(
-            result['asset_description']['appid'], result['hash_name']
-        )
+        market_search_dict = parse_market_search_general_info(result)
 
         market_search_dict['appid'] = result['asset_description'].get('appid')
 

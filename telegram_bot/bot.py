@@ -19,7 +19,8 @@ from telegram_bot.constants import (ST_CHOOSE_JOB_TYPE, CB_CANCEL,
                                     CHOOSE_JOB_TYPE_REGEX, CB_EDIT_JOB,
                                     CB_DELETE_JOB)
 from telegram_bot.conversations import manage_item_info_jobs_command, end_conv, \
-    choose_job_conv, manage_job_conv, delete_job_conv, edit_job_conv
+    choose_job_conv, manage_job_conv, delete_job_conv, edit_job_conv, \
+    back_to_choose_job_conv
 from telegram_bot.exceptions.exceptions import CommandException, ApiException
 from telegram_bot.jobs import save_jobs_job
 from telegram_bot.utils.job_utils import save_jobs, load_jobs
@@ -121,6 +122,9 @@ def main():
                 ),
                 CallbackQueryHandler(
                     delete_job_conv, pattern=CB_DELETE_JOB
+                ),
+                CallbackQueryHandler(
+                    back_to_choose_job_conv, pattern=f'^{CB_BACK}$'
                 ),
             ]
         },
