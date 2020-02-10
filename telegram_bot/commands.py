@@ -76,7 +76,7 @@ def item_info_timed_command(update: Update, context: CallbackContext):
     else:
         when = parse_datetime(f'{args[0]} {args[1]}')
 
-    chat_id = update.message.chat_id
+    chat_id = update.effective_chat.id
     job_context = {
         'chat_id': chat_id,
         'item_info_args': args[args.index('-')+1:],
@@ -95,8 +95,8 @@ def item_info_timed_command(update: Update, context: CallbackContext):
         f'{format_job(new_job, with_header=False)}'
     )
 
-    update.message.reply_text(
-        emojize(success_text, use_aliases=True),
+    context.bot.send_message(
+        chat_id=chat_id, text=emojize(success_text, use_aliases=True),
         parse_mode=ParseMode.HTML
     )
 
@@ -107,7 +107,7 @@ def item_info_repeating_command(update: Update, context: CallbackContext):
     if len(args) < 4:
         raise CommandException(ERRMSG_NOT_ENOUGH_ARGS)
 
-    chat_id = update.message.chat_id
+    chat_id = update.effective_chat.id
 
     interval_str = args[0]
 
@@ -145,8 +145,8 @@ def item_info_repeating_command(update: Update, context: CallbackContext):
         f'{format_job(new_job, with_header=False)}'
     )
 
-    update.message.reply_text(
-        emojize(success_text, use_aliases=True),
+    context.bot.send_message(
+        chat_id=chat_id, text=emojize(success_text, use_aliases=True),
         parse_mode=ParseMode.HTML
     )
 
@@ -157,7 +157,7 @@ def item_info_daily_command(update: Update, context: CallbackContext):
     if len(args) < 4:
         raise CommandException(ERRMSG_NOT_ENOUGH_ARGS)
 
-    chat_id = update.message.chat_id
+    chat_id = update.effective_chat.id
 
     if args.index('-') >= 2:
         time_str = args[1]
@@ -190,8 +190,8 @@ def item_info_daily_command(update: Update, context: CallbackContext):
         f'{format_job(new_job, with_header=False)}'
     )
 
-    update.message.reply_text(
-        emojize(success_text, use_aliases=True),
+    context.bot.send_message(
+        chat_id=chat_id, text=emojize(success_text, use_aliases=True),
         parse_mode=ParseMode.HTML
     )
 
@@ -202,7 +202,7 @@ def item_info_alert_command(update: Update, context: CallbackContext):
     if len(args) < 4:
         raise CommandException(ERRMSG_NOT_ENOUGH_ARGS)
 
-    chat_id = update.message.chat_id
+    chat_id = update.effective_chat.id
 
     job_context = {
         'chat_id': chat_id,
@@ -229,8 +229,8 @@ def item_info_alert_command(update: Update, context: CallbackContext):
         f'{format_job(new_job, with_header=False)}'
     )
 
-    update.message.reply_text(
-        emojize(success_text, use_aliases=True),
+    context.bot.send_message(
+        chat_id=chat_id, text=emojize(success_text, use_aliases=True),
         parse_mode=ParseMode.HTML
     )
 
