@@ -16,7 +16,7 @@ from telegram_bot.exceptions.exceptions import CommandException
 from telegram_bot.utils.job_utils import save_jobs, remove_job
 from telegram_bot.utils.message_builder import format_item_info
 from telegram_bot.utils.utils import parse_item_info_args, send_item_message, \
-    send_item_info, job_error_handler, parse_alert_conditions
+    send_item_info, job_error_handler
 
 
 @job_error_handler
@@ -26,7 +26,7 @@ def check_values_of_an_item_info_job(context: CallbackContext):
 
     meets_conditions_list = []
 
-    for condition in parse_alert_conditions(context.job.context['conditions']):
+    for condition in context.job.context['conditions']:
         try:
             key_name, postfix, cond_value = condition
 

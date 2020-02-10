@@ -12,12 +12,14 @@ from telegram.ext import CallbackContext
 from market_api.api import get_item_info
 from settings import CHAT_FOR_ERRORS
 from telegram_bot.constants import NO_IMAGE_ARG, DATETIME_FORMAT, \
-    QUOTATION_MARKS, KV_SEPARATOR, COND_SEPARATOR
+    QUOTATION_MARKS, KV_SEPARATOR, COND_SEPARATOR, JOB_TO_CHAT_DATA_KEY, \
+    II_ALERT_JOBS
 from telegram_bot.exceptions.error_messages import ERRMSG_BRACKETS_ERROR, \
     ERRMSG_NOT_ENOUGH_ARGS, ERRMSG_APPID_NOT_INT, WRNMSG_NOT_EXACT, \
     ERRMSG_WRONG_DATE_FORMAT, ERRMSG_NO_FUTURE, ERRMSG_WRONG_TIME_FORMAT, \
-    WRNMSG_NOT_FULL_INFO
+    WRNMSG_NOT_FULL_INFO, ERRMSG_ALERT_NOT_VALID_CONDITIONS
 from telegram_bot.exceptions.exceptions import CommandException, ApiException
+from telegram_bot.utils.job_utils import remove_job
 from telegram_bot.utils.message_builder import format_item_info
 
 
@@ -193,6 +195,12 @@ def job_error_handler(func):
         except Exception as e:
             context.error = e
             handle_job_error(context, context.job.context['chat_id'])
+            if JOB_TO_CHAT_DATA_KEY[context.job.name] in (II_ALERT_JOBS,):
+                job = context.job.context['job']
+            else:
+                job = context.job
+
+            remove_job(context, context.job.context['chat_id'], job)
 
     return job_func
 
@@ -200,11 +208,14 @@ def job_error_handler(func):
 def parse_alert_conditions(conditions: list):
     resulting_conditions = []
 
-    for condition in conditions:
-        cond_key, cond_value = condition.lower().split(KV_SEPARATOR)
-        key_name, postfix = cond_key.split(COND_SEPARATOR)
+    try:
+        for condition in conditions:
+            cond_key, cond_value = condition.lower().split(KV_SEPARATOR)
+            key_name, postfix = cond_key.split(COND_SEPARATOR)
 
-        resulting_conditions.append((key_name, postfix, cond_value))
+            resulting_conditions.append((key_name, postfix, cond_value))
+    except ValueError:
+        raise CommandException(ERRMSG_ALERT_NOT_VALID_CONDITIONS)
 
     return resulting_conditions
 
