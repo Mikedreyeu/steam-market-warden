@@ -25,7 +25,8 @@ from telegram_bot.jobs import item_info_timed_job, \
 from telegram_bot.utils.job_utils import init_jobs_dict_chat_data
 from telegram_bot.utils.message_builder import format_market_search, format_job
 from telegram_bot.utils.utils import parse_args, send_typing_action, \
-    send_item_message, send_item_info, parse_datetime, parse_time
+    send_item_message, send_item_info, parse_datetime, parse_time, \
+    parse_alert_conditions
 
 
 def start_command(update: Update, context: CallbackContext):
@@ -75,7 +76,7 @@ def item_info_timed_command(update: Update, context: CallbackContext):
     else:
         when = parse_datetime(f'{args[0]} {args[1]}')
 
-    chat_id = update.message.chat_id
+    chat_id = update.effective_chat.id
     job_context = {
         'chat_id': chat_id,
         'item_info_args': args[args.index('-')+1:],
@@ -94,8 +95,8 @@ def item_info_timed_command(update: Update, context: CallbackContext):
         f'{format_job(new_job, with_header=False)}'
     )
 
-    update.message.reply_text(
-        emojize(success_text, use_aliases=True),
+    context.bot.send_message(
+        chat_id=chat_id, text=emojize(success_text, use_aliases=True),
         parse_mode=ParseMode.HTML
     )
 
@@ -106,7 +107,7 @@ def item_info_repeating_command(update: Update, context: CallbackContext):
     if len(args) < 4:
         raise CommandException(ERRMSG_NOT_ENOUGH_ARGS)
 
-    chat_id = update.message.chat_id
+    chat_id = update.effective_chat.id
 
     interval_str = args[0]
 
@@ -144,8 +145,8 @@ def item_info_repeating_command(update: Update, context: CallbackContext):
         f'{format_job(new_job, with_header=False)}'
     )
 
-    update.message.reply_text(
-        emojize(success_text, use_aliases=True),
+    context.bot.send_message(
+        chat_id=chat_id, text=emojize(success_text, use_aliases=True),
         parse_mode=ParseMode.HTML
     )
 
@@ -156,7 +157,7 @@ def item_info_daily_command(update: Update, context: CallbackContext):
     if len(args) < 4:
         raise CommandException(ERRMSG_NOT_ENOUGH_ARGS)
 
-    chat_id = update.message.chat_id
+    chat_id = update.effective_chat.id
 
     if args.index('-') >= 2:
         time_str = args[1]
@@ -189,8 +190,8 @@ def item_info_daily_command(update: Update, context: CallbackContext):
         f'{format_job(new_job, with_header=False)}'
     )
 
-    update.message.reply_text(
-        emojize(success_text, use_aliases=True),
+    context.bot.send_message(
+        chat_id=chat_id, text=emojize(success_text, use_aliases=True),
         parse_mode=ParseMode.HTML
     )
 
@@ -201,11 +202,11 @@ def item_info_alert_command(update: Update, context: CallbackContext):
     if len(args) < 4:
         raise CommandException(ERRMSG_NOT_ENOUGH_ARGS)
 
-    chat_id = update.message.chat_id
+    chat_id = update.effective_chat.id
 
     job_context = {
         'chat_id': chat_id,
-        'conditions': args[:args.index('-')],
+        'conditions': parse_alert_conditions(args[:args.index('-')]),
         'item_info_args': args[args.index('-')+1:]
     }
 
@@ -228,8 +229,8 @@ def item_info_alert_command(update: Update, context: CallbackContext):
         f'{format_job(new_job, with_header=False)}'
     )
 
-    update.message.reply_text(
-        emojize(success_text, use_aliases=True),
+    context.bot.send_message(
+        chat_id=chat_id, text=emojize(success_text, use_aliases=True),
         parse_mode=ParseMode.HTML
     )
 

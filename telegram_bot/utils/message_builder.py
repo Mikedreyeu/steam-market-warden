@@ -39,11 +39,9 @@ def format_days_of_the_week(days_list: list, short_form: bool = False):
 
 
 def format_alerts_conditions(conditions):
-    from telegram_bot.utils.utils import parse_alert_conditions
-
     result_text = '<b>Conditions:</b>'
 
-    for condition in parse_alert_conditions(conditions):
+    for condition in conditions:
         key_name, postfix, cond_value = condition
 
         if key_name not in (SELL_PRICE, MEDIAN_PRICE):
