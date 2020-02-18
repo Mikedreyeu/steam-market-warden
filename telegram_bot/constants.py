@@ -61,9 +61,11 @@ JOBS = 'jobs'
 SELECTED_JOB = 'selected_job'
 
 II_ALERT_JOBS = 'item_info_alert'
-II_TIMED_JOBS = 'item_info_timed'
-II_REPEATING_JOBS = 'item_info_repeating'
-II_DAILY_JOBS = 'item_info_daily'
+II_TIMED_JOBS = 'timed'
+II_REPEATING_JOBS = 'repeating'
+II_DAILY_JOBS = 'daily'
+
+WL_REQUEST = 'whitelist_request'
 
 CHOOSE_JOB_TYPE_REGEX = (
     f'^(?P<job_type>{"|".join([II_ALERT_JOBS, II_TIMED_JOBS, II_REPEATING_JOBS, II_DAILY_JOBS, CB_ALL])})'
@@ -86,9 +88,9 @@ CALLBACK_TO_TYPE = {
 
 JOB_TO_CHAT_DATA_KEY = {
     'check_values_of_an_item_info_job': II_ALERT_JOBS,
-    'item_info_timed_job': II_TIMED_JOBS,
-    'item_info_repeating_job': II_REPEATING_JOBS,
-    'item_info_daily_job': II_DAILY_JOBS
+    'timed_job': II_TIMED_JOBS,
+    'repeating_job': II_REPEATING_JOBS,
+    'daily_job': II_DAILY_JOBS
 }
 
 DOTW_DICT = {
@@ -139,43 +141,43 @@ help_command_text_part_2 = (
     '<b>:man_construction_worker::woman_firefighter:  Jobs :woman_mechanic::man_factory_worker:</b>\n\n'
 
     '<b>:books: Manage your jobs</b>\n'
-    '<b>Usage:</b> /manage_item_info_jobs\n\n'
+    '<b>Usage:</b> /manage_jobs\n\n'
 
     '<b>:steam_locomotive: Get item info on specific time once</b>\n'
-    '<b>Usage:</b> <i>/item_info_timed when - appid item_name</i> [<i>-no_image</i>]\n'
+    '<b>Usage:</b> <i>/timed when - appid item_name</i> [<i>-no_image</i>]\n'
     '\n<b>Args:</b>\n'
     '<b>1. <i>when</i></b> - time in or at which the item info should be sent to you:\n'
     '   • If it\'s a datetime in format <i>hh:mm dd.mm.yyyy</i> it will be interpreted as a specific date and time at which the job should run\n'
     '   • If it\'s an integer it will be interpreted as “seconds from now” in which the job should run\n'
     '<b>2. <i>appid</i>, <i>item_name</i>, <i>-no_image</i></b> - same as in /item_info\n'
     '\n<b>Examples:</b>\n'
-    '<i>/item_info_timed 14:35 31.01.2020 - 440 "Mann Co. Supply Crate Key"</i>\n'
-    '<i>/item_info_timed 200 - 440 "Mann Co. Supply Crate Key</i>\n\n'
+    '<i>/timed 14:35 31.01.2020 - 440 "Mann Co. Supply Crate Key"</i>\n'
+    '<i>/timed 200 - 440 "Mann Co. Supply Crate Key</i>\n\n'
 
     '<b>:articulated_lorry: Get item info repeatedly</b>\n'
-    '<b>Usage:</b> /item_info_repeating <i>interval</i> [<i>first</i>] - <i>appid</i> <i>item_name</i> [<i>-no_image</i>]\n'
+    '<b>Usage:</b> /repeating <i>interval</i> [<i>first</i>] - <i>appid</i> <i>item_name</i> [<i>-no_image</i>]\n'
     '\n<b>Args:</b>\n'
     '<b>1. <i>interval</i></b> - interval in which item info should be sent in format <i>[[number][m|h|d|w]]+</i> where <i>number</i> means any positive integer, <i>|</i> means "or", <i>+</i> means any number of times\n'
     '<b>2. <i>first</i></b> - datetime in format <i>hh:mm dd.mm.yyyy</i> at which the item info should be sent for the first time(defaults to now)\n'
     '<b>3. <i>appid</i>, <i>item_name</i>, <i>-no_image</i></b> - same as in /item_info\n'
     '\n<b>Examples:</b>\n'
-    '<i>/item_info_repeating 6h20m 23:08 31.01.2020 - 440 "Mann Co. Supply Crate Key"</i>\n'
-    '<i>/item_info_repeating 1m1h1d1w - 440 "Mann Co. Supply Crate Key"</i>\n\n'
+    '<i>/repeating 6h20m 23:08 31.01.2020 - 440 "Mann Co. Supply Crate Key"</i>\n'
+    '<i>/repeating 1m1h1d1w - 440 "Mann Co. Supply Crate Key"</i>\n\n'
 
     '<b>:truck: Get item info every day (or on some days of the week)</b>\n'
-    '<b>Usage:</b> /item_info_daily [<i>days_of_the_week</i>] <i>time</i> - <i>appid</i> <i>item_name</i> [<i>-no_image</i>]\n'
+    '<b>Usage:</b> /daily [<i>days_of_the_week</i>] <i>time</i> - <i>appid</i> <i>item_name</i> [<i>-no_image</i>]\n'
     '\n<b>Args:</b>\n'
     '<b>1. <i>days_of_the_week</i></b> - defines on which days of the week the item info should be sent. Defaults to every day. Format: days represented as numbers (1 = Monday) and separated by comma (",") without space\n'
     '<b>2. <i>time</i></b> - time of day at which the item info should be sent\n'
     '<b>3. <i>appid</i>, <i>item_name</i>, <i>-no_image</i></b> - same as in /item_info\n'
     '\n<b>Examples:</b>\n'
-    '<i>/item_info_daily 22:54 - 440 "Mann Co. Supply Crate Key"</i>\n'
-    '<i>/item_info_daily 1,3,5 20:54 - 440 "Mann Co. Supply Crate Key"</i>\n\n'
+    '<i>/daily 22:54 - 440 "Mann Co. Supply Crate Key"</i>\n'
+    '<i>/daily 1,3,5 20:54 - 440 "Mann Co. Supply Crate Key"</i>\n\n'
 
 
-    '<b>:nail_care: Set the alert</b>\n'
+    '<b>:nail_care: Set item info alert</b>\n'
     'When all conditions are met an alarm will be sent.\n'
-    '<b>Usage:</b> <i>/item_info_alert conditions - appid item_name</i> [<i>-no_image</i>]\n'
+    '<b>Usage:</b> <i>/alert conditions - appid item_name</i> [<i>-no_image</i>]\n'
     '\n<b>Args:</b>\n'
     '<b>1. <i>conditions</i></b> - set of conditions in format <i>property__sign=value</i> separated with spaces:\n'
     f'  • Available <i>properties</i>: <i>{SELL_PRICE}</i>, <i>{SELL_LISTINGS}</i>, <i>{MEDIAN_PRICE}</i>, <i>{VOLUME}</i>\n'
@@ -183,6 +185,6 @@ help_command_text_part_2 = (
     '   • <i>Value</i> is a floating-point number\n'
     '<b>2. <i>appid</i>, <i>item_name</i>, <i>-no_image</i></b> - same as in /item_info\n'
     '\n<b>Examples:</b>\n'
-    '<i>/item_info_alert sell_price__gt=2.55 - 440 "Mann Co. Supply Crate Key"</i>\n'
-    '<i>/item_info_alert sell_price__gt=6 sell_listings__lt=50 median_price__gte=5.22 volume__lte=10 - 440 "Mann Co. Supply Crate Key" </i>\n'
+    '<i>/alert sell_price__gt=2.55 - 440 "Mann Co. Supply Crate Key"</i>\n'
+    '<i>/alert sell_price__gt=6 sell_listings__lt=50 median_price__gte=5.22 volume__lte=10 - 440 "Mann Co. Supply Crate Key" </i>\n'
 )

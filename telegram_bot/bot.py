@@ -12,7 +12,8 @@ from telegram.utils.helpers import mention_html
 from settings import BOT_TOKEN, CHAT_FOR_ERRORS
 from telegram_bot.commands import start_command, item_info_command, \
     market_search_command, item_info_timed_command, item_info_daily_command, \
-    item_info_alert_command, item_info_repeating_command, help_command
+    item_info_alert_command, item_info_repeating_command, help_command, \
+    add_user_to_whitelist_command
 from telegram_bot.constants import (ST_CHOOSE_JOB_TYPE, CB_CANCEL,
                                     ST_CHOOSE_JOB, CB_BACK,
                                     ST_MANAGE_JOB, MANAGE_JOB_REGEX,
@@ -20,7 +21,7 @@ from telegram_bot.constants import (ST_CHOOSE_JOB_TYPE, CB_CANCEL,
                                     CB_DELETE_JOB)
 from telegram_bot.conversations import manage_item_info_jobs_command, end_conv, \
     choose_job_conv, manage_job_conv, delete_job_conv, edit_job_conv, \
-    back_to_choose_job_conv
+    back_to_choose_job_conv, whitelist_request_conv
 from telegram_bot.exceptions.exceptions import CommandException, ApiException
 from telegram_bot.jobs import save_jobs_job
 from telegram_bot.utils.job_utils import save_jobs, load_jobs
@@ -92,10 +93,10 @@ def main():
         # First run
         pass
 
-    conv_handler = ConversationHandler(
+    manage_jobs_conv_handler = ConversationHandler(
         entry_points=[
             CommandHandler(
-                'manage_item_info_jobs', manage_item_info_jobs_command
+                'manage_jobs', manage_item_info_jobs_command
             )
         ],
         states={
@@ -134,18 +135,24 @@ def main():
             )
         ]
     )
-    dp.add_handler(conv_handler)
+    dp.add_handler(manage_jobs_conv_handler)
+
+    dp.add_handler(CallbackQueryHandler(whitelist_request_conv))
 
     dp.add_handler(CommandHandler('start', start_command))
     dp.add_handler(CommandHandler('item_info', item_info_command))
     dp.add_handler(CommandHandler('market_search', market_search_command))
-    dp.add_handler(CommandHandler('item_info_timed', item_info_timed_command))
-    dp.add_handler(CommandHandler('item_info_daily', item_info_daily_command))
-    dp.add_handler(CommandHandler('item_info_alert', item_info_alert_command))
+    dp.add_handler(CommandHandler('timed', item_info_timed_command))
+    dp.add_handler(CommandHandler('daily', item_info_daily_command))
+    dp.add_handler(CommandHandler('alert', item_info_alert_command))
     dp.add_handler(
-        CommandHandler('item_info_repeating', item_info_repeating_command)
+        CommandHandler('repeating', item_info_repeating_command)
     )
     dp.add_handler(CommandHandler('help', help_command))
+
+    dp.add_handler(
+        CommandHandler('add_to_whitelist', add_user_to_whitelist_command)
+    )
 
     dp.add_error_handler(error_handler)
 

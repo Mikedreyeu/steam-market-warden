@@ -41,9 +41,7 @@ def format_days_of_the_week(days_list: list, short_form: bool = False):
 def format_alerts_conditions(conditions):
     result_text = '<b>Conditions:</b>'
 
-    for condition in conditions:
-        key_name, postfix, cond_value = condition
-
+    for key_name, postfix, cond_value in conditions:
         if key_name not in (SELL_PRICE, MEDIAN_PRICE):
             currency_symbol = ''
             cond_value = int(cond_value)

@@ -21,3 +21,9 @@ class Job(Model):
     __table__ = 'jobs'
 
     __fillable__ = ['job_blob']
+
+
+class Whitelist(Model):
+    __table__ = 'whitelist'
+
+    __fillable__ = ['user_id']
