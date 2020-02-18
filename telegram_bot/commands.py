@@ -7,6 +7,7 @@ from telegram import ParseMode, Update
 from telegram.ext import CallbackContext
 from telegram.ext.jobqueue import Days
 
+from db.models import Whitelist
 from market_api.api import market_search_for_command
 from telegram_bot.constants import (NO_IMAGE_ARG, TIMEDELTA_KEYS,
                                     INTERVAL_UNIT_REGEX, II_TIMED_JOBS,
@@ -26,13 +27,14 @@ from telegram_bot.utils.job_utils import init_jobs_dict_chat_data
 from telegram_bot.utils.message_builder import format_market_search, format_job
 from telegram_bot.utils.utils import parse_args, send_typing_action, \
     send_item_message, send_item_info, parse_datetime, parse_time, \
-    parse_alert_conditions
+    parse_alert_conditions, whitelist_only, admin_only
 
 
 def start_command(update: Update, context: CallbackContext):
     help_command(update, context)
 
 
+@whitelist_only
 @send_typing_action
 def market_search_command(update: Update, context: CallbackContext):
     args = parse_args(context.args)
@@ -57,6 +59,7 @@ def market_search_command(update: Update, context: CallbackContext):
     sleep(API_REQUEST_COOLDOWN)
 
 
+@whitelist_only
 @send_typing_action
 def item_info_command(update: Update, context: CallbackContext):
     args = parse_args(context.args)
@@ -65,6 +68,7 @@ def item_info_command(update: Update, context: CallbackContext):
     sleep(API_REQUEST_COOLDOWN)
 
 
+@whitelist_only
 def item_info_timed_command(update: Update, context: CallbackContext):
     args = parse_args(context.args)
 
@@ -101,6 +105,7 @@ def item_info_timed_command(update: Update, context: CallbackContext):
     )
 
 
+@whitelist_only
 def item_info_repeating_command(update: Update, context: CallbackContext):
     args = parse_args(context.args)
 
@@ -151,6 +156,7 @@ def item_info_repeating_command(update: Update, context: CallbackContext):
     )
 
 
+@whitelist_only
 def item_info_daily_command(update: Update, context: CallbackContext):
     args = parse_args(context.args)
 
@@ -196,6 +202,7 @@ def item_info_daily_command(update: Update, context: CallbackContext):
     )
 
 
+@whitelist_only
 def item_info_alert_command(update: Update, context: CallbackContext):
     args = parse_args(context.args)
 
@@ -243,4 +250,17 @@ def help_command(update: Update, context: CallbackContext):
     update.message.reply_text(
         text=emojize(help_command_text_part_2, use_aliases=True),
         parse_mode=ParseMode.HTML
+    )
+
+@admin_only
+def add_user_to_whitelist_command(update: Update, context: CallbackContext):
+    user_id = int(context.args[0])
+
+    Whitelist.first_or_create(user_id=user_id)
+
+    context.bot.send_message(
+        chat_id=user_id,
+        text=emojize(
+            ':tada: You are now on the whitelist!', use_aliases=True
+        )
     )

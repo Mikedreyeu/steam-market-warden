@@ -5,15 +5,17 @@ from datetime import timezone, timedelta, datetime, time
 from functools import wraps
 
 from emoji import emojize
+from orator.exceptions.orm import ModelNotFound
 from telegram import ChatAction, ParseMode, Update, InlineKeyboardMarkup, \
     InlineKeyboardButton
 from telegram.ext import CallbackContext
 
+from db.models import Whitelist
 from market_api.api import get_item_info
-from settings import CHAT_FOR_ERRORS
+from settings import CHAT_FOR_ERRORS, ADMIN_ID
 from telegram_bot.constants import NO_IMAGE_ARG, DATETIME_FORMAT, \
     QUOTATION_MARKS, KV_SEPARATOR, COND_SEPARATOR, JOB_TO_CHAT_DATA_KEY, \
-    II_ALERT_JOBS
+    II_ALERT_JOBS, WL_REQUEST
 from telegram_bot.exceptions.error_messages import ERRMSG_BRACKETS_ERROR, \
     ERRMSG_NOT_ENOUGH_ARGS, ERRMSG_APPID_NOT_INT, WRNMSG_NOT_EXACT, \
     ERRMSG_WRONG_DATE_FORMAT, ERRMSG_NO_FUTURE, ERRMSG_WRONG_TIME_FORMAT, \
@@ -95,6 +97,45 @@ def send_typing_action(func):
         context.bot.send_chat_action(
             chat_id=update.effective_message.chat_id, action=ChatAction.TYPING
         )
+        return func(update, context,  *args, **kwargs)
+
+    return command_func
+
+
+def whitelist_only(func):
+    @wraps(func)
+    def command_func(update: Update, context: CallbackContext, *args, **kwargs):
+        try:
+            Whitelist.where(
+                'user_id', update.effective_user.id
+            ).first_or_fail()
+        except ModelNotFound:
+            text = emojize(
+                ':no_entry: You are not on the whitelist', use_aliases=True
+            )
+            reply_markup = InlineKeyboardMarkup([[
+                InlineKeyboardButton(
+                    'Request to be whitelisted',
+                    callback_data=WL_REQUEST
+                )
+            ]])
+            context.bot.send_message(
+                chat_id=update.effective_message.chat_id, text=text,
+                reply_markup=reply_markup
+            )
+            return
+
+        return func(update, context,  *args, **kwargs)
+
+    return command_func
+
+
+def admin_only(func):
+    @wraps(func)
+    def command_func(update: Update, context: CallbackContext, *args, **kwargs):
+        if update.effective_user.id != ADMIN_ID:
+            return
+
         return func(update, context,  *args, **kwargs)
 
     return command_func

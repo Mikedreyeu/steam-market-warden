@@ -5,19 +5,22 @@ from emoji import emojize
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, \
     ParseMode
 from telegram.ext import CallbackContext, ConversationHandler
+from telegram.utils.helpers import mention_html
 
-from telegram_bot.constants import (ST_CHOOSE_JOB_TYPE, CB_ALL,
-                                    II_ALERT_JOBS, II_TIMED_JOBS,
-                                    II_REPEATING_JOBS, II_DAILY_JOBS,
-                                    ST_CHOOSE_JOB, JOB_TO_CHAT_DATA_KEY,
-                                    SELECTED_JOB, CALLBACK_TO_TYPE,
-                                    CB_MANAGE_JOB, NUMBERS, CB_BACK,
-                                    ST_MANAGE_JOB, JOBS, CB_DELETE_JOB,
-                                    CB_EDIT_JOB, CB_CANCEL)
+from settings import CHAT_FOR_REQUESTS
+from telegram_bot.constants import (ST_CHOOSE_JOB_TYPE, CB_ALL, II_ALERT_JOBS,
+                                    II_TIMED_JOBS, II_REPEATING_JOBS,
+                                    II_DAILY_JOBS, ST_CHOOSE_JOB,
+                                    JOB_TO_CHAT_DATA_KEY, SELECTED_JOB,
+                                    CALLBACK_TO_TYPE, CB_MANAGE_JOB, NUMBERS,
+                                    CB_BACK, ST_MANAGE_JOB, JOBS,
+                                    CB_DELETE_JOB, CB_EDIT_JOB, CB_CANCEL,
+                                    WL_REQUEST)
 from telegram_bot.exceptions.exceptions import CommandException
 from telegram_bot.utils.job_utils import remove_job
 from telegram_bot.utils.message_builder import format_job
-from telegram_bot.utils.utils import build_menu, get_paginated_list
+from telegram_bot.utils.utils import build_menu, get_paginated_list, \
+    whitelist_only
 
 
 def manage_item_info_jobs_command(update: Update, context: CallbackContext):
@@ -273,3 +276,40 @@ def end_conv(update: Update, context: CallbackContext):
         text='Manage item info canceled'
     )
     return ConversationHandler.END
+
+
+def whitelist_request_conv(update: Update, context: CallbackContext):
+    query = update.callback_query
+    if query.data == WL_REQUEST:
+        user_info_text = ''
+
+        if update.effective_chat:
+            user_info_text += f'Chat: <i>{update.effective_chat.title}</i>'
+            if update.effective_chat.username:
+                user_info_text += f' (@{update.effective_chat.username})'
+
+        if update.effective_user:
+            user_mention = mention_html(
+                update.effective_user.id, update.effective_user.first_name
+            )
+            user_info_text = (
+                f'User: {user_mention}\n'
+                f'{user_info_text}\n'
+                f'/add_to_whitelist@SteamMarketWardenBot'
+                f' {update.effective_user.id}'
+            )
+
+        context.bot.send_message(
+            CHAT_FOR_REQUESTS, user_info_text, parse_mode=ParseMode.HTML
+        )
+
+        text = emojize(
+            ':no_entry: You are not on the whitelist\n:envelope: Request sent',
+            use_aliases=True
+        )
+
+        context.bot.edit_message_text(
+            chat_id=query.message.chat_id,
+            message_id=query.message.message_id,
+            text=text
+        )

@@ -8,7 +8,9 @@ from orator import DatabaseManager
 load_dotenv(verbose=True)
 
 BOT_TOKEN = os.getenv('BOT_TOKEN')
-CHAT_FOR_ERRORS = os.getenv('CHAT_FOR_ERRORS')
+CHAT_FOR_ERRORS = int(os.getenv('CHAT_FOR_ERRORS'))
+CHAT_FOR_REQUESTS = int(os.getenv('CHAT_FOR_REQUESTS'))
+ADMIN_ID = int(os.getenv('ADMIN_ID'))
 DATABASE_URL = os.getenv('DATABASE_URL')
 
 DATABASE_URL_REGEX = r'postgres://(?P<user>.+):(?P<password>.+)@(?P<host>.+):(?P<port>\d+)/(?P<database>.+)'
