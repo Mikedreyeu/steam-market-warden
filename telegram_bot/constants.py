@@ -61,9 +61,9 @@ JOBS = 'jobs'
 SELECTED_JOB = 'selected_job'
 
 II_ALERT_JOBS = 'item_info_alert'
-II_TIMED_JOBS = 'timed'
-II_REPEATING_JOBS = 'repeating'
-II_DAILY_JOBS = 'daily'
+II_TIMED_JOBS = 'item_info_timed'
+II_REPEATING_JOBS = 'item_info_repeating'
+II_DAILY_JOBS = 'item_info_daily'
 
 WL_REQUEST = 'whitelist_request'
 
@@ -88,9 +88,9 @@ CALLBACK_TO_TYPE = {
 
 JOB_TO_CHAT_DATA_KEY = {
     'check_values_of_an_item_info_job': II_ALERT_JOBS,
-    'timed_job': II_TIMED_JOBS,
-    'repeating_job': II_REPEATING_JOBS,
-    'daily_job': II_DAILY_JOBS
+    'item_info_timed_job': II_TIMED_JOBS,
+    'item_info_repeating_job': II_REPEATING_JOBS,
+    'item_info_daily_job': II_DAILY_JOBS
 }
 
 DOTW_DICT = {
@@ -155,14 +155,14 @@ help_command_text_part_2 = (
     '<i>/timed 200 - 440 "Mann Co. Supply Crate Key</i>\n\n'
 
     '<b>:articulated_lorry: Get item info repeatedly</b>\n'
-    '<b>Usage:</b> /repeating <i>interval</i> [<i>first</i>] - <i>appid</i> <i>item_name</i> [<i>-no_image</i>]\n'
+    '<b>Usage:</b> /item_info_repeating <i>interval</i> [<i>first</i>] - <i>appid</i> <i>item_name</i> [<i>-no_image</i>]\n'
     '\n<b>Args:</b>\n'
     '<b>1. <i>interval</i></b> - interval in which item info should be sent in format <i>[[number][m|h|d|w]]+</i> where <i>number</i> means any positive integer, <i>|</i> means "or", <i>+</i> means any number of times\n'
     '<b>2. <i>first</i></b> - datetime in format <i>hh:mm dd.mm.yyyy</i> at which the item info should be sent for the first time(defaults to now)\n'
     '<b>3. <i>appid</i>, <i>item_name</i>, <i>-no_image</i></b> - same as in /item_info\n'
     '\n<b>Examples:</b>\n'
-    '<i>/repeating 6h20m 23:08 31.01.2020 - 440 "Mann Co. Supply Crate Key"</i>\n'
-    '<i>/repeating 1m1h1d1w - 440 "Mann Co. Supply Crate Key"</i>\n\n'
+    '<i>/item_info_repeating 6h20m 23:08 31.01.2020 - 440 "Mann Co. Supply Crate Key"</i>\n'
+    '<i>/item_info_repeating 1m1h1d1w - 440 "Mann Co. Supply Crate Key"</i>\n\n'
 
     '<b>:truck: Get item info every day (or on some days of the week)</b>\n'
     '<b>Usage:</b> /daily [<i>days_of_the_week</i>] <i>time</i> - <i>appid</i> <i>item_name</i> [<i>-no_image</i>]\n'
