@@ -10,7 +10,7 @@ from market_api.constants import (
 )
 from market_api.utils import build_icon_url, build_market_url, \
     parse_market_search_general_info
-from telegram_bot.constants import SELL_PRICE
+from telegram_bot.constants import SELL_PRICE, VOLUME
 from telegram_bot.exceptions.error_messages import ERRMSG_NOTHING_FOUND, \
     ERRMSG_API_COOLDOWN
 from telegram_bot.exceptions.exceptions import ApiException
@@ -149,8 +149,8 @@ def get_item_info(appid: int, market_hash_name: str, currency: int = 1):
 
         for key in (*PRICE_OVERVIEW_KEYS_TO_EXTRACT, SELL_PRICE):
             if item_info[key]:
-                if key == 'volume':
-                    item_info[key] = int(item_info[key])
+                if key == VOLUME:
+                    item_info[key] = int(item_info[key].replace(',', ''))
                 else:
                     item_info[key] = float(item_info[key][1:])
 
